@@ -1,0 +1,79 @@
+[package]
+name = "radio-controllers"
+version = "0.1.0"
+edition = "2024"
+authors = ["Martin Budden"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/martinbudden/crate-radio-controllers"
+description = "Drivers for SBUS, IBUS, Crossfire/ExpressLRS receivers."
+keywords = ["sbus", "ibus", "crossfire", "express_lrs", "no_std"]
+categories = [
+    "embedded",
+    "mathematics",
+    "no-std",
+    "science::robotics",
+]
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "katex-header.html"]
+
+[features]
+#default = ["libm"]
+#std = ["vqm/std"]
+#no_align = ["vqm/no_align"]
+#simd = ["vqm/simd"]
+#libm = ["num-traits/libm", "vqm/libm"]
+
+[dependencies]
+#libm = "0.2.16"
+vqm = { version = "0.1.1" }
+#vqm = { git = "https://github.com/martinbudden/crate-vector-quaternion-matrix" }
+#vqm = { path = "../vector-quaternion-matrix" }
+embedded-hal-nb = "1.0.0"
+embedded-hal = "1.0.0"
+nb = "1.1.0"
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }
+postcard = { version = "1.0", features = ["embedded-io"] }
+
+[dev-dependencies]
+# This allows 'cargo test' to work on a PC
+embedded-hal-nb = "1.0.0" 
+
+# see https://doc.rust-lang.org/cargo/reference/profiles.html
+[profile.dev]
+opt-level = 0
+debug = "line-tables-only"
+# split-debuginfo = '...'  # Platform-specific.
+strip = "none"
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+rpath = false
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+# split-debuginfo = '...'  # Platform-specific.
+strip = "none"
+debug-assertions = false
+overflow-checks = false
+lto = false
+panic = 'abort'
+incremental = false
+codegen-units = 16
+rpath = false
+
+[profile.release-lto]
+inherits = "release"
+lto = true
