@@ -34,7 +34,7 @@ impl RatesConfig {
     pub const THROTTLE_LIMIT_TYPE_CLIP: u8 = 2;
     pub const THROTTLE_LIMIT_TYPE_COUNT: u8 = 3;
 
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             limits: [Self::LIMIT_MAX, Self::LIMIT_MAX, Self::LIMIT_MAX],
             rc_rates: [7, 7, 7],
@@ -127,7 +127,6 @@ impl Rates {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::float_cmp)]
-    #![allow(unused_results)]
 
     #[allow(unused)]
     use super::*;

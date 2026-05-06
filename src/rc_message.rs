@@ -31,9 +31,9 @@ impl RadioControlMessage {
     pub const STABILIZATION_MODE_HORIZON: u8 = 2;
     pub const STABILIZATION_MODE_LEVEL_RACE: u8 = 3;
 
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
-            rc_modes: BitSet64::default(),
+            rc_modes: BitSet64::new(),
             tick_count: 0,
             throttle_stick: 0.0,
             roll_stick_dps: 0.0,

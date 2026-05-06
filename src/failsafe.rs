@@ -32,7 +32,7 @@ impl FailsafeConfig {
     pub const SWITCH_MODE_STAGE2: u8 = 2;
     pub const SWITCH_MODE_KILL: u8 = 3;
 
-    fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             throttle_pwm: 1000, // throttle off
             throttle_low_delay_deciseconds: 100,
@@ -55,7 +55,6 @@ impl Default for FailsafeConfig {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::float_cmp)]
-    #![allow(unused_results)]
 
     #[allow(unused)]
     use super::*;

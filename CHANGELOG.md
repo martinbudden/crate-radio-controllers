@@ -23,6 +23,13 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Security
 
+## [0.1.1] - 2023-05-06
+
+### Changed
+
+- Made `new` functions const where possible.
+- Updated to latest crates.
+
 ## [0.1.0] - 2023-04-28
 
 Initial release.

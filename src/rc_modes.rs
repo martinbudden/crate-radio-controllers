@@ -157,7 +157,6 @@ impl RcModes {
     ///      T       F      - all previous AND macs active, no previous active OR macs.
     ///      T       T      - at least 1 previous inactive AND mac, no previous active OR macs.
     ///
-    #[allow(unused_results)]
     fn update_masks_for_mac(
         mac: ModeActivationCondition,
         and_bitset: &mut BitSet64,
@@ -183,7 +182,6 @@ impl RcModes {
         }
     }
 
-    #[allow(unused_results)]
     fn update_masks_for_sticky_modes(
         &mut self,
         mac: ModeActivationCondition,
@@ -205,7 +203,6 @@ impl RcModes {
         }
     }
 
-    #[allow(unused_results)]
     pub fn update_activated_modes(&mut self, rx_frame: &RxFrame) {
         let mut new_bitset = BitSet64::default();
         let mut and_bitset = BitSet64::default();
@@ -243,7 +240,6 @@ impl RcModes {
         self.active_modes = new_bitset ^ and_bitset;
     }
 
-    #[allow(unused_results)]
     pub fn update_modes(&self) -> (BitSet64, u8) {
         let mut rc_modes = BitSet64::default();
         let mut stabilization_mode = 0u8;
