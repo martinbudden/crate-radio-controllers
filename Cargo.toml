@@ -28,8 +28,6 @@ rustdoc-args = ["--html-in-header", "katex-header.html"]
 [dependencies]
 #libm = "0.2.16"
 vqm = { version = "0.1.3" }
-#vqm = { git = "https://github.com/martinbudden/crate-vector-quaternion-matrix" }
-#vqm = { path = "../vector-quaternion-matrix" }
 embedded-hal-nb = "1.0.0"
 embedded-hal = "1.0.0"
 nb = "1.1.0"

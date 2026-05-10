@@ -49,7 +49,7 @@ impl RadioControlMessage {
 
 impl RadioControlMessage {
     /// Create a `RadioControlMessage` from an `RxFrame`, applying rates and including `RcModes`.
-    pub fn from_rx_frame(
+    pub fn new_from(
         rx_frame: &RxFrame,
         rates: &Rates,
         rc_modes: &RcModes,
@@ -68,11 +68,8 @@ impl RadioControlMessage {
         let roll_stick_degrees = sticks.roll * rates.max_roll_angle_degrees;
         let pitch_stick_degrees = sticks.pitch * rates.max_pitch_angle_degrees;
 
-        // Update rc_modes from the frame that has just come in from the radio.
-        //rc_modes.update_activated_modes(rx_frame);
-
-        // Set the stabilization mode (eg STABILIZATION_MODE_RATE) (used by the flight controller),
-        // Set the rc_modes (eg altitude hold, gps home) (used by the autopilot).
+        // Get the rc_modes (eg altitude hold, gps home) (used by the autopilot),
+        // and the stabilization mode (eg STABILIZATION_MODE_RATE) (used by the flight controller).
         let (rc_modes, stabilization_mode) = rc_modes.update_modes();
 
         RadioControlMessage {

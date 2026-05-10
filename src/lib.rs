@@ -19,6 +19,7 @@ mod protocols;
 mod rates;
 mod rc_message;
 mod rc_modes;
+mod rx_config;
 mod rx_receiver;
 
 pub use crate::protocols::receiver_crsf::CrsfReceiver;
@@ -27,6 +28,7 @@ pub use failsafe::FailsafeConfig;
 pub use mock_uart::MockUart;
 pub use rates::{Rates, RatesConfig};
 pub use rc_modes::{ModeActivationCondition, RcMode, RcModes, RxChannelRange};
+pub use rx_config::RxConfig;
 pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
 
 pub use rc_message::RadioControlMessage;
