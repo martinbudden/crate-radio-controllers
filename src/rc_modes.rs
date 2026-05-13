@@ -1,4 +1,5 @@
 use crate::{RadioControlMessage, RxFrame};
+use serde::{Deserialize, Serialize};
 use vqm::BitSet64;
 
 /// PWM channels are divided into "steps". Steps are 25 units wide<br>
@@ -9,10 +10,22 @@ use vqm::BitSet64;
 /// Steps are used to convert channel values into "switches"
 /// So for example if the `CHANNEL_AUX1` is > 1500 that might correspond to the motors being "armed"
 /// while a value < 1500 might correspond to the motors being "disarmed".
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct RxChannelRange {
-    start: u8,
-    end: u8,
+    pub start: u8,
+    pub end: u8,
+}
+
+impl RxChannelRange {
+    pub const fn new() -> Self {
+        Self { start: 0, end: 0 }
+    }
+}
+
+impl Default for RxChannelRange {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RxChannelRange {
@@ -62,7 +75,7 @@ impl RxChannelRange {
 
 /// Mode Activation Condition (MAC).<br><br>
 ///
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct ModeActivationCondition {
     pub range: RxChannelRange,
     pub mode_id: u8,
@@ -71,21 +84,47 @@ pub struct ModeActivationCondition {
     pub linked_to: u8,
 }
 
+impl ModeActivationCondition {
+    pub const fn new() -> Self {
+        Self { range: RxChannelRange::new(), mode_id: 0, aux_channel_index: 0, mode_logic: 0, linked_to: 0 }
+    }
+}
+
+impl Default for ModeActivationCondition {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Radio control modes.<br><br>
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct RcModes {
-    active_mac_count: usize,
-    linked_mac_count: usize,
-    active_modes: BitSet64,
-    sticky_modes_was_ever_disabled: BitSet64,
-    active_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-    linked_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-    macs: [ModeActivationCondition; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+    pub active_mac_count: usize,
+    pub linked_mac_count: usize,
+    pub active_modes: BitSet64,
+    pub sticky_modes_was_ever_disabled: BitSet64,
+    pub active_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+    pub linked_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+    pub macs: [ModeActivationCondition; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
 }
 
 impl RcModes {
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            active_mac_count: 0,
+            linked_mac_count: 0,
+            active_modes: BitSet64::new(),
+            sticky_modes_was_ever_disabled: BitSet64::new(),
+            active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+            linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+            macs: [ModeActivationCondition::new(); Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+        }
+    }
+}
+
+impl Default for RcModes {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -243,42 +282,42 @@ impl RcModes {
     pub fn update_modes(&self) -> (BitSet64, u8) {
         let mut rc_modes = BitSet64::default();
         let mut stabilization_mode = 0u8;
-        if self.is_mode_active(RcMode::ANGLE) {
-            rc_modes.set(RcMode::ANGLE);
+        if self.is_mode_active(RcModesArray::ANGLE) {
+            rc_modes.set(RcModesArray::ANGLE);
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
         }
 
-        if self.is_mode_active(RcMode::HORIZON) {
-            rc_modes.set(RcMode::HORIZON);
+        if self.is_mode_active(RcModesArray::HORIZON) {
+            rc_modes.set(RcModesArray::HORIZON);
             // we don't support horizon mode, instead we use the horizon mode setting to invoke level race mode
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_LEVEL_RACE;
         }
-        if self.is_mode_active(RcMode::ALTITUDE_HOLD) {
-            rc_modes.set(RcMode::ALTITUDE_HOLD);
+        if self.is_mode_active(RcModesArray::ALTITUDE_HOLD) {
+            rc_modes.set(RcModesArray::ALTITUDE_HOLD);
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcMode::POSITION_HOLD) {
-            rc_modes.set(RcMode::POSITION_HOLD);
+        if self.is_mode_active(RcModesArray::POSITION_HOLD) {
+            rc_modes.set(RcModesArray::POSITION_HOLD);
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcMode::MAG) {
-            rc_modes.set(RcMode::MAG);
+        if self.is_mode_active(RcModesArray::MAG) {
+            rc_modes.set(RcModesArray::MAG);
         }
-        if self.is_mode_active(RcMode::HEADFREE) {
-            rc_modes.set(RcMode::HEADFREE);
+        if self.is_mode_active(RcModesArray::HEADFREE) {
+            rc_modes.set(RcModesArray::HEADFREE);
         }
-        if self.is_mode_active(RcMode::CHIRP) {
-            rc_modes.set(RcMode::CHIRP);
+        if self.is_mode_active(RcModesArray::CHIRP) {
+            rc_modes.set(RcModesArray::CHIRP);
         }
-        if self.is_mode_active(RcMode::PASSTHRU) {
-            rc_modes.set(RcMode::PASSTHRU);
+        if self.is_mode_active(RcModesArray::PASSTHRU) {
+            rc_modes.set(RcModesArray::PASSTHRU);
         }
-        if self.is_mode_active(RcMode::FAILSAFE) {
-            rc_modes.set(RcMode::FAILSAFE);
+        if self.is_mode_active(RcModesArray::FAILSAFE) {
+            rc_modes.set(RcModesArray::FAILSAFE);
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcMode::GPS_RESCUE) {
-            rc_modes.set(RcMode::GPS_RESCUE);
+        if self.is_mode_active(RcModesArray::GPS_RESCUE) {
+            rc_modes.set(RcModesArray::GPS_RESCUE);
             stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
         }
         (rc_modes, stabilization_mode)
@@ -286,8 +325,8 @@ impl RcModes {
 }
 
 /// Human readable name for an `RcMode`.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RcModeName {
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct RcMode {
     pub id: u8,
     pub permanent_id: u8,
     pub name: &'static str,
@@ -295,9 +334,23 @@ pub struct RcModeName {
 
 /// Radio control modes, including armed/disarmed and flight modes.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RcMode {}
+pub struct RcModesArray {
+    active_ids: BitSet64,
+}
 
-impl RcMode {
+impl RcModesArray {
+    pub const fn new() -> Self {
+        Self { active_ids: BitSet64::new() }
+    }
+}
+
+impl Default for RcModesArray {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RcModesArray {
     pub const MAX_MODES_PER_PAGE: u8 = 32;
     pub const PERMANENT_ID_NONE: u8 = 255;
 
@@ -357,82 +410,95 @@ impl RcMode {
     pub const LAP_TIMER_RESET: u8 = 47;
     pub const COUNT: u8 = 47;
 
-    pub const RC_MODES: [RcModeName; Self::COUNT as usize] = [
-        RcModeName { id: Self::ARM, permanent_id: 0, name: "ARM" },
-        RcModeName { id: Self::ANGLE, permanent_id: 1, name: "ANGLE" },
-        RcModeName { id: Self::HORIZON, permanent_id: 2, name: "HORIZON" },
-        RcModeName { id: Self::ALTITUDE_HOLD, permanent_id: 3, name: "ALTHOLD" },
-        RcModeName { id: Self::ANTIGRAVITY, permanent_id: 4, name: "ANTI GRAVITY" },
-        RcModeName { id: Self::MAG, permanent_id: 5, name: "MAG" },
-        RcModeName { id: Self::HEADFREE, permanent_id: 6, name: "HEADFREE" },
-        RcModeName { id: Self::HEADADJ, permanent_id: 7, name: "HEADADJ" },
-        RcModeName { id: Self::CAMSTAB, permanent_id: 8, name: "CAMSTAB" },
+    pub const RC_MODES: [RcMode; Self::COUNT as usize] = [
+        RcMode { id: Self::ARM, permanent_id: 0, name: "ARM" },
+        RcMode { id: Self::ANGLE, permanent_id: 1, name: "ANGLE" },
+        RcMode { id: Self::HORIZON, permanent_id: 2, name: "HORIZON" },
+        RcMode { id: Self::ALTITUDE_HOLD, permanent_id: 3, name: "ALTHOLD" },
+        RcMode { id: Self::ANTIGRAVITY, permanent_id: 4, name: "ANTI GRAVITY" },
+        RcMode { id: Self::MAG, permanent_id: 5, name: "MAG" },
+        RcMode { id: Self::HEADFREE, permanent_id: 6, name: "HEADFREE" },
+        RcMode { id: Self::HEADADJ, permanent_id: 7, name: "HEADADJ" },
+        RcMode { id: Self::CAMSTAB, permanent_id: 8, name: "CAMSTAB" },
         // RcModeName {id: Self::CAM_TRIG,    permanent_id:9,  name:"CAM_TRIG", },
         // RcModeName {id: Self::GPS_HOME,    permanent_id:10, name:"GPS HOME" },
-        RcModeName { id: Self::POSITION_HOLD, permanent_id: 11, name: "POS HOLD" },
-        RcModeName { id: Self::PASSTHRU, permanent_id: 12, name: "PASSTHRU" },
-        RcModeName { id: Self::BEEPER_ON, permanent_id: 13, name: "BEEPER" },
+        RcMode { id: Self::POSITION_HOLD, permanent_id: 11, name: "POS HOLD" },
+        RcMode { id: Self::PASSTHRU, permanent_id: 12, name: "PASSTHRU" },
+        RcMode { id: Self::BEEPER_ON, permanent_id: 13, name: "BEEPER" },
         // RcModeName {id: Self::LEDMAX,     permanent_id:14, name:"LEDMAX" }, (removed)
-        RcModeName { id: Self::LED_LOW, permanent_id: 15, name: "LEDLOW" },
+        RcMode { id: Self::LED_LOW, permanent_id: 15, name: "LEDLOW" },
         // RcModeName {id: Self::LLIGHTS,     permanent_id:16, name:"LLIGHTS" }, (removed)
-        RcModeName { id: Self::CALIBRATE, permanent_id: 17, name: "CALIBRATE" },
+        RcMode { id: Self::CALIBRATE, permanent_id: 17, name: "CALIBRATE" },
         // RcModeName {id: Self::GOVERNOR,    permanent_id:18, name:"GOVERNOR" }, (removed)
-        RcModeName { id: Self::OSD, permanent_id: 19, name: "OSD DISABLE" },
-        RcModeName { id: Self::TELEMETRY, permanent_id: 20, name: "TELEMETRY" },
+        RcMode { id: Self::OSD, permanent_id: 19, name: "OSD DISABLE" },
+        RcMode { id: Self::TELEMETRY, permanent_id: 20, name: "TELEMETRY" },
         // RcModeName {id: Self::GTUNE,       permanent_id:21, name:"GTUNE" }, (removed)
         // RcModeName {id: Self::RANGEFINDER, permanent_id:22, name:"RANGEFINDER" }, (removed)
-        RcModeName { id: Self::SERVO1, permanent_id: 23, name: "SERVO1" },
-        RcModeName { id: Self::SERVO2, permanent_id: 24, name: "SERVO2" },
-        RcModeName { id: Self::SERVO3, permanent_id: 25, name: "SERVO3" },
-        RcModeName { id: Self::BLACKBOX, permanent_id: 26, name: "BLACK" },
-        RcModeName { id: Self::FAILSAFE, permanent_id: 27, name: "FAILSAFE" },
-        RcModeName { id: Self::AIRMODE, permanent_id: 28, name: "AIR MODE" },
-        RcModeName { id: Self::MODE_3D, permanent_id: 29, name: "3D DISABLE / SWITCH" },
-        RcModeName { id: Self::FPV_ANGLE_MIX, permanent_id: 30, name: "FPV ANGLE MIX" },
-        RcModeName { id: Self::BLACKBOX_ERASE, permanent_id: 31, name: "BLACK ERASE" },
-        RcModeName { id: Self::CAMERA1, permanent_id: 32, name: "CAMERA CONTROL 1" },
-        RcModeName { id: Self::CAMERA2, permanent_id: 33, name: "CAMERA CONTROL 2" },
-        RcModeName { id: Self::CAMERA3, permanent_id: 34, name: "CAMERA CONTROL 3" },
-        RcModeName { id: Self::CRASH_FLIP, permanent_id: 35, name: "FLIP OVER AFTER CRASH" },
-        RcModeName { id: Self::PREARM, permanent_id: 36, name: "PREARM" },
-        RcModeName { id: Self::BEEP_GPS_COUNT, permanent_id: 37, name: "GPS BEEP SATELLITE COUNT" },
+        RcMode { id: Self::SERVO1, permanent_id: 23, name: "SERVO1" },
+        RcMode { id: Self::SERVO2, permanent_id: 24, name: "SERVO2" },
+        RcMode { id: Self::SERVO3, permanent_id: 25, name: "SERVO3" },
+        RcMode { id: Self::BLACKBOX, permanent_id: 26, name: "BLACK" },
+        RcMode { id: Self::FAILSAFE, permanent_id: 27, name: "FAILSAFE" },
+        RcMode { id: Self::AIRMODE, permanent_id: 28, name: "AIR MODE" },
+        RcMode { id: Self::MODE_3D, permanent_id: 29, name: "3D DISABLE / SWITCH" },
+        RcMode { id: Self::FPV_ANGLE_MIX, permanent_id: 30, name: "FPV ANGLE MIX" },
+        RcMode { id: Self::BLACKBOX_ERASE, permanent_id: 31, name: "BLACK ERASE" },
+        RcMode { id: Self::CAMERA1, permanent_id: 32, name: "CAMERA CONTROL 1" },
+        RcMode { id: Self::CAMERA2, permanent_id: 33, name: "CAMERA CONTROL 2" },
+        RcMode { id: Self::CAMERA3, permanent_id: 34, name: "CAMERA CONTROL 3" },
+        RcMode { id: Self::CRASH_FLIP, permanent_id: 35, name: "FLIP OVER AFTER CRASH" },
+        RcMode { id: Self::PREARM, permanent_id: 36, name: "PREARM" },
+        RcMode { id: Self::BEEP_GPS_COUNT, permanent_id: 37, name: "GPS BEEP SATELLITE COUNT" },
         // RcModeName {id: Self::BOX3D_ON_A_SWITCH,.permanent_id= 38, name:"3D ON A SWITCH", }, (removed)
-        RcModeName { id: Self::VTX_PIT_MODE, permanent_id: 39, name: "VTX PIT MODE" },
-        RcModeName { id: Self::USER1, permanent_id: 40, name: "USER1" }, // may be overridden
-        RcModeName { id: Self::USER2, permanent_id: 41, name: "USER2" },
-        RcModeName { id: Self::USER3, permanent_id: 42, name: "USER3" },
-        RcModeName { id: Self::USER4, permanent_id: 43, name: "USER4" },
-        RcModeName { id: Self::PID_AUDIO, permanent_id: 44, name: "PID AUDIO" },
-        RcModeName { id: Self::PARALYZE, permanent_id: 45, name: "PARALYZE" },
-        RcModeName { id: Self::GPS_RESCUE, permanent_id: 46, name: "GPS RESCUE" },
-        RcModeName { id: Self::ACRO_TRAINER, permanent_id: 47, name: "ACRO TRAINER" },
-        RcModeName { id: Self::VTX_CONTROL_DISABLE, permanent_id: 48, name: "VTX CONTROL DISABLE" },
-        RcModeName { id: Self::LAUNCH_CONTROL, permanent_id: 49, name: "LAUNCH CONTROL" },
-        RcModeName { id: Self::MSP_OVERRIDE, permanent_id: 50, name: "MSP OVERRIDE" },
-        RcModeName { id: Self::STICK_COMMAND_DISABLE, permanent_id: 51, name: "STICK COMMANDS DISABLE" },
-        RcModeName { id: Self::BEEPER_MUTE, permanent_id: 52, name: "BEEPER MUTE" },
-        RcModeName { id: Self::READY, permanent_id: 53, name: "READY" },
-        RcModeName { id: Self::LAP_TIMER_RESET, permanent_id: 54, name: "LAP TIMER RESET" },
+        RcMode { id: Self::VTX_PIT_MODE, permanent_id: 39, name: "VTX PIT MODE" },
+        RcMode { id: Self::USER1, permanent_id: 40, name: "USER1" }, // may be overridden
+        RcMode { id: Self::USER2, permanent_id: 41, name: "USER2" },
+        RcMode { id: Self::USER3, permanent_id: 42, name: "USER3" },
+        RcMode { id: Self::USER4, permanent_id: 43, name: "USER4" },
+        RcMode { id: Self::PID_AUDIO, permanent_id: 44, name: "PID AUDIO" },
+        RcMode { id: Self::PARALYZE, permanent_id: 45, name: "PARALYZE" },
+        RcMode { id: Self::GPS_RESCUE, permanent_id: 46, name: "GPS RESCUE" },
+        RcMode { id: Self::ACRO_TRAINER, permanent_id: 47, name: "ACRO TRAINER" },
+        RcMode { id: Self::VTX_CONTROL_DISABLE, permanent_id: 48, name: "VTX CONTROL DISABLE" },
+        RcMode { id: Self::LAUNCH_CONTROL, permanent_id: 49, name: "LAUNCH CONTROL" },
+        RcMode { id: Self::MSP_OVERRIDE, permanent_id: 50, name: "MSP OVERRIDE" },
+        RcMode { id: Self::STICK_COMMAND_DISABLE, permanent_id: 51, name: "STICK COMMANDS DISABLE" },
+        RcMode { id: Self::BEEPER_MUTE, permanent_id: 52, name: "BEEPER MUTE" },
+        RcMode { id: Self::READY, permanent_id: 53, name: "READY" },
+        RcMode { id: Self::LAP_TIMER_RESET, permanent_id: 54, name: "LAP TIMER RESET" },
     ];
+}
+
+impl RcModesArray {
+    pub fn find_rc_mode_by_id(id: u8) -> Option<RcMode> {
+        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.id)
+    }
+    pub fn find_rc_mode_by_permanent_id(id: u8) -> Option<RcMode> {
+        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.permanent_id)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn is_normal<T: Sized + Send + Sync + Unpin>() {}
+    fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_config<
+        T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
+    >() {
+    }
 
     #[test]
     fn normal_types() {
-        is_full::<RxChannelRange>();
-        is_full::<ModeActivationCondition>();
-        is_full::<RcModes>();
-        is_normal::<RcMode>();
-        is_normal::<RcModeName>();
+        is_config::<RxChannelRange>();
+        is_config::<ModeActivationCondition>();
+        is_config::<RcModes>();
+        is_full::<RcModesArray>();
+        is_full::<RcMode>();
     }
     #[test]
-    fn new() {
+    fn test_new() {
         let rc_modes = RcModes::default();
         assert_eq!(0, rc_modes.active_mac_count);
     }

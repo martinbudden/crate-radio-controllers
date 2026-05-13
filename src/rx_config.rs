@@ -46,3 +46,27 @@ impl Default for RxConfig {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(unused)]
+    fn is_normal<T: Sized + Send + Sync + Unpin>() {}
+    #[allow(unused)]
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_config<
+        T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
+    >() {
+    }
+
+    #[test]
+    fn normal_types() {
+        is_config::<RxConfig>();
+    }
+    #[test]
+    fn test_new() {
+        let config = RxConfig::new();
+        assert_eq!(0, config.serial_rx_provider);
+    }
+}

@@ -17,6 +17,7 @@ mod failsafe;
 mod mock_uart;
 mod protocols;
 mod rates;
+mod rc_adjustments;
 mod rc_message;
 mod rc_modes;
 mod rx_config;
@@ -27,7 +28,11 @@ pub use controls::{RcSticks, RxControlsPwm};
 pub use failsafe::FailsafeConfig;
 pub use mock_uart::MockUart;
 pub use rates::{Rates, RatesConfig};
-pub use rc_modes::{ModeActivationCondition, RcMode, RcModes, RxChannelRange};
+pub use rc_adjustments::{
+    RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,
+    RcTimedAdjustmentState,
+};
+pub use rc_modes::{ModeActivationCondition, RcModes, RcModesArray, RxChannelRange};
 pub use rx_config::RxConfig;
 pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
 

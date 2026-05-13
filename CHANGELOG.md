@@ -23,6 +23,18 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Security
 
+## [0.1.3] - 2026-05-13
+
+### Added
+
+- RC Adjustments.
+- Serialization/deserialization to `RcModes` and related.
+
+### Changed
+
+- Updated to vqm 0.1.4.
+- Made some additional `RcModes` and related fields public.
+
 ## [0.1.2] - 2026-05-10
 
 ### Added

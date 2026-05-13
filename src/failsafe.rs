@@ -73,7 +73,7 @@ mod tests {
         is_config::<FailsafeConfig>();
     }
     #[test]
-    fn new() {
+    fn test_new() {
         let failsafe = FailsafeConfig::new();
 
         assert_eq!(failsafe.throttle_pwm, 1000); // throttle off

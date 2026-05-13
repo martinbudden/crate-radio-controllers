@@ -103,6 +103,16 @@ impl Rates {
 }
 
 impl Rates {
+    pub fn set(&mut self, config: RatesConfig) {
+        self.limits = [f32::from(config.limits[0]), f32::from(config.limits[1]), f32::from(config.limits[2])];
+        self.rc_rates = [f32::from(config.rc_rates[0]), f32::from(config.rc_rates[1]), f32::from(config.rc_rates[2])];
+        self.rc_expos = [f32::from(config.rc_expos[0]), f32::from(config.rc_expos[1]), f32::from(config.rc_expos[2])];
+        self.rates = [f32::from(config.rates[0]), f32::from(config.rates[1]), f32::from(config.rates[2])];
+        self.throttle_midpoint = f32::from(config.throttle_midpoint);
+        self.throttle_expo = f32::from(config.throttle_expo);
+        self.throttle_limit_type = config.throttle_limit_type;
+        self.throttle_limit_percent = f32::from(config.throttle_limit_percent);
+    }
     pub fn set_to_pass_through(&mut self) {
         self.rc_rates = [100.0, 100.0, 100.0]; // center sensitivity
         self.rc_expos = [0.0, 0.0, 0.0]; // movement sensitivity, nonlinear

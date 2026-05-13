@@ -125,7 +125,7 @@ impl CrsfParser {
         crc
     }
 
-    fn _calculate_packet_crc(packet: [u8; Self::MAX_PACKET_SIZE]) -> u8 {
+    /*fn calculate_packet_crc(packet: [u8; Self::MAX_PACKET_SIZE]) -> u8 {
         let packet_length = packet[Self::PACKET_LENGTH_OFFSET] as usize;
         let mut ii = Self::PACKET_TYPE_OFFSET;
         let mut crc = Self::calculate_crc(0, packet[ii]);
@@ -135,7 +135,7 @@ impl CrsfParser {
             ii += 1;
         }
         crc
-    }
+    }*/
 
     fn received_crc(packet: [u8; Self::MAX_PACKET_SIZE]) -> u8 {
         let packet_length = packet[Self::PACKET_LENGTH_OFFSET] as usize;
@@ -216,7 +216,7 @@ impl CrsfParser {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LinkStatistics {
     pub uplink_rssi_dbm: i8, // Usually -30 to -120
     pub uplink_lq: u8,       // 0 - 100
@@ -225,6 +225,26 @@ pub struct LinkStatistics {
     pub tx_power_mw: u16,    // Mapped from the power enum
     pub downlink_rssi_dbm: i8,
     pub downlink_lq: u8,
+}
+
+impl LinkStatistics {
+    pub const fn new() -> Self {
+        Self {
+            uplink_rssi_dbm: 0,
+            uplink_lq: 0,
+            uplink_snr: 0,
+            rf_mode: 0,
+            tx_power_mw: 0,
+            downlink_rssi_dbm: 0,
+            downlink_lq: 0,
+        }
+    }
+}
+
+impl Default for LinkStatistics {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LinkStatistics {

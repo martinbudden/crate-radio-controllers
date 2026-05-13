@@ -3,12 +3,24 @@
 use crate::{RxChannel, RxFrame, RxLinkStatus};
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusFlags {
     pub aux13: bool,
     pub aux14: bool,
     pub frame_lost: bool,
     pub failsafe: bool,
+}
+
+impl SbusFlags {
+    pub const fn new() -> Self {
+        Self { aux13: false, aux14: false, frame_lost: false, failsafe: false }
+    }
+}
+
+impl Default for SbusFlags {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SbusFlags {
@@ -22,13 +34,31 @@ impl SbusFlags {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
     pub flags: SbusFlags,
     pub failsafe: bool,
     pub frame_lost: bool,
     pub rssi: u8,
+}
+
+impl SbusFrame {
+    pub const fn new() -> Self {
+        Self {
+            channels: [0u16; Self::CHANNEL_COUNT],
+            flags: SbusFlags::new(),
+            failsafe: false,
+            frame_lost: false,
+            rssi: 0,
+        }
+    }
+}
+
+impl Default for SbusFrame {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SbusFrame {

@@ -54,6 +54,12 @@ pub enum RxLinkStatus {
     NoSignal,
 }
 
+impl RxLinkStatus {
+    pub const fn new() -> Self {
+        Self::Ok
+    }
+}
+
 /// RX channel constants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RxChannel {}
@@ -100,7 +106,7 @@ pub struct RxFrame {
 }
 
 impl RxFrame {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             channels: [
                 RxChannel::MID,
@@ -120,7 +126,7 @@ impl RxFrame {
                 RxChannel::LOW,
                 RxChannel::LOW,
             ],
-            status: RxLinkStatus::default(),
+            status: RxLinkStatus::new(),
             rssi: 0,
         }
     }
@@ -182,7 +188,7 @@ mod tests {
         is_full::<RxReceiverCommon>();
     }
     #[test]
-    fn new() {
+    fn test_new() {
         let receiver = RxReceiverCommon::new();
         assert!(!receiver.packet_received);
     }

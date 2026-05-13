@@ -12,9 +12,21 @@ use crate::{RxFrame, RxLinkStatus};
 ///    Bytes 2–29: 14 Channels (2 bytes each, Little-Endian)
 ///    Bytes 30–31: Checksum (2 bytes, Little-Endian).
 ///
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct IbusFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
+}
+
+impl IbusFrame {
+    pub const fn new() -> Self {
+        Self { channels: [0u16; Self::CHANNEL_COUNT] }
+    }
+}
+
+impl Default for IbusFrame {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl IbusFrame {
