@@ -18,22 +18,13 @@ categories = [
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
 
-[features]
-#default = ["libm"]
-#std = ["vqm/std"]
-#no_align = ["vqm/no_align"]
-#simd = ["vqm/simd"]
-#libm = ["num-traits/libm", "vqm/libm"]
-
 [dependencies]
-#libm = "0.2.16"
-vqm = { version = "0.1.4" }
-#vqm = { path = "../vector-quaternion-matrix" }
+simple-bitset = "0.1.0"
 embedded-hal-nb = "1.0.0"
 embedded-hal = "1.0.0"
 nb = "1.1.0"
 serde = { version = "1.0.228", default-features = false, features = ["derive"] }
-postcard = { version = "1.0", features = ["embedded-io"] }
+postcard = { version = "1.1.3", features = ["embedded-io"] }
 
 [dev-dependencies]
 # This allows 'cargo test' to work on a PC

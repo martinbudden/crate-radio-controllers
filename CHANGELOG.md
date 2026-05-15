@@ -23,6 +23,12 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Security
 
+## [0.1.4] - 2026-05-15
+
+### Changed
+
+- Changed to use `simple-bitset` crate.
+
 ## [0.1.3] - 2026-05-13
 
 ### Added

@@ -1,6 +1,6 @@
 #[allow(unused)]
 use crate::{Rates, RcModes, RcSticks, RxFrame};
-use vqm::BitSet64;
+use simple_bitset::BitSet64;
 
 /// Message for communicating a radio control command between tasks.<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -1,6 +1,6 @@
 use crate::{RadioControlMessage, RxFrame};
 use serde::{Deserialize, Serialize};
-use vqm::BitSet64;
+use simple_bitset::BitSet64;
 
 /// PWM channels are divided into "steps". Steps are 25 units wide<br>
 /// There are 48 steps between 900 and 2100.<br>
