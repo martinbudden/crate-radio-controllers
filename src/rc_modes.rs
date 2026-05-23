@@ -1,4 +1,5 @@
 use crate::{RadioControlMessage, RxFrame};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use simple_bitset::BitSet64;
 
@@ -10,7 +11,8 @@ use simple_bitset::BitSet64;
 /// Steps are used to convert channel values into "switches"
 /// So for example if the `CHANNEL_AUX1` is > 1500 that might correspond to the motors being "armed"
 /// while a value < 1500 might correspond to the motors being "disarmed".
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RxChannelRange {
     pub start: u8,
     pub end: u8,
@@ -75,7 +77,8 @@ impl RxChannelRange {
 
 /// Mode Activation Condition (MAC).<br><br>
 ///
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ModeActivationCondition {
     pub range: RxChannelRange,
     pub mode_id: u8,
@@ -97,7 +100,8 @@ impl Default for ModeActivationCondition {
 }
 
 /// Radio control modes.<br><br>
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcModes {
     pub active_mac_count: usize,
     pub linked_mac_count: usize,
@@ -484,6 +488,7 @@ mod tests {
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    #[cfg(feature = "serde")]
     fn is_config<
         T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
     >() {
@@ -491,8 +496,14 @@ mod tests {
 
     #[test]
     fn normal_types() {
+        is_full::<RxChannelRange>();
+        is_full::<ModeActivationCondition>();
+        is_full::<RcModes>();
+        #[cfg(feature = "serde")]
         is_config::<RxChannelRange>();
+        #[cfg(feature = "serde")]
         is_config::<ModeActivationCondition>();
+        #[cfg(feature = "serde")]
         is_config::<RcModes>();
         is_full::<RcModesArray>();
         is_full::<RcMode>();

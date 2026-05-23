@@ -1,12 +1,14 @@
 use crate::RxChannelRange;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcAdjustmentRange {
     // when aux channel is in range...
     pub range: RxChannelRange,
-    pub aux_channel_index: u8,
     // ..then apply the adjustment function to the aux_switch_channel ...
+    pub aux_channel_index: u8,
     pub adjustment_config: u8,
     pub aux_switch_channel_index: u8,
     pub adjustment_center: u8,
@@ -32,7 +34,8 @@ impl Default for RcAdjustmentRange {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RcAdjustmentMode {
     #[default]
     Step,
@@ -45,7 +48,8 @@ impl RcAdjustmentMode {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcTimedAdjustmentState {
     pub timeout_at_milliseconds: u32,
     pub adjustment_range_index: u8,
@@ -64,7 +68,8 @@ impl Default for RcTimedAdjustmentState {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcContinuosAdjustmentState {
     pub adjustment_range_index: u8,
     pub last_rc_data: u16,
@@ -82,7 +87,8 @@ impl Default for RcContinuosAdjustmentState {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcAdjustmentData {
     pub step: u8,
     pub switch_positions: u8,
@@ -100,7 +106,8 @@ impl Default for RcAdjustmentData {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcAdjustmentConfig {
     pub adjustment: u8,
     pub adjustment_mode: u8,
@@ -124,7 +131,8 @@ mod tests {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
-    fn _is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    #[cfg(feature = "serde")]
     fn is_config<
         T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
     >() {
@@ -132,6 +140,16 @@ mod tests {
 
     #[test]
     fn normal_types() {
+        is_full::<RcAdjustmentRange>();
+        is_full::<RcAdjustmentMode>();
+        is_full::<RcTimedAdjustmentState>();
+        is_full::<RcContinuosAdjustmentState>();
+        is_full::<RcAdjustmentData>();
+        is_full::<RcAdjustmentRange>();
+    }
+    #[cfg(feature = "serde")]
+    #[test]
+    fn config_types() {
         is_config::<RcAdjustmentRange>();
         is_config::<RcAdjustmentMode>();
         is_config::<RcTimedAdjustmentState>();

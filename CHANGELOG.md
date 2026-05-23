@@ -23,6 +23,20 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Security
 
+## [0.1.5] - 2026-05-23
+
+### Added
+
+- `.cargo/cargo.toml`.
+
+### Changed
+
+- Made `serde` and optional feature.
+
+### Removed
+
+- `katex-header.html`.
+
 ## [0.1.4] - 2026-05-15
 
 ### Changed

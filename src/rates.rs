@@ -1,7 +1,9 @@
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Configuration data for Rates.
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RatesConfig {
     pub limits: [u16; Self::AXIS_COUNT],
     pub rc_rates: [u8; Self::AXIS_COUNT],
@@ -138,13 +140,11 @@ impl Rates {
 mod tests {
     #![allow(clippy::float_cmp)]
 
-    #[allow(unused)]
     use super::*;
 
-    #[allow(unused)]
-    fn is_normal<T: Sized + Send + Sync + Unpin>() {}
-    #[allow(unused)]
+    fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    #[cfg(feature = "serde")]
     fn is_config<
         T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
     >() {
@@ -152,6 +152,8 @@ mod tests {
 
     #[test]
     fn normal_types() {
+        is_full::<RatesConfig>();
+        #[cfg(feature = "serde")]
         is_config::<RatesConfig>();
         is_full::<Rates>();
     }
