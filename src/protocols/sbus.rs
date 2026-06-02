@@ -2,58 +2,24 @@
 //use embedded_hal_nb::serial::{Error};
 use crate::{RxChannel, RxFrame, RxLinkStatus};
 
-#[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct SbusFlags {
-    pub aux13: bool,
-    pub aux14: bool,
-    pub frame_lost: bool,
-    pub failsafe: bool,
-}
-
-impl SbusFlags {
-    pub const fn new() -> Self {
-        Self { aux13: false, aux14: false, frame_lost: false, failsafe: false }
-    }
-}
-
-impl Default for SbusFlags {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl SbusFlags {
-    const AUX13: u8 = 0x01;
-    const AUX14: u8 = 0x02;
-    const FRAME_LOST: u8 = 0x04;
-    const FAILSAFE: u8 = 0x08;
-    pub fn from_byte(byte: u8) -> Self {
-        Self {
-            aux13: (byte & Self::AUX13) != 0,
-            aux14: (byte & Self::AUX14) != 0,
-            frame_lost: (byte & Self::FRAME_LOST) != 0,
-            failsafe: (byte & Self::FAILSAFE) != 0,
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
-    pub flags: SbusFlags,
-    pub failsafe: bool,
-    pub frame_lost: bool,
+    pub flags: u8,
     pub rssi: u8,
 }
 
 impl SbusFrame {
+    const AUX13: u8 = 0x01;
+    const AUX14: u8 = 0x02;
+    const FRAME_LOST: u8 = 0x04;
+    const FAILSAFE: u8 = 0x08;
+
     pub const fn new() -> Self {
         Self {
             channels: [0u16; Self::CHANNEL_COUNT],
-            flags: SbusFlags::new(),
-            failsafe: false,
-            frame_lost: false,
+            flags: 0,
             rssi: 0,
         }
     }
@@ -94,9 +60,9 @@ impl SbusFrame {
 impl From<SbusFrame> for RxFrame {
     fn from(frame: SbusFrame) -> Self {
         //let flags = SbusFlags::from_byte(raw_buffer[23]);
-        let status = if frame.flags.failsafe {
+        let status = if frame.flags & SbusFrame::FAILSAFE != 0 {
             RxLinkStatus::Failsafe
-        } else if frame.frame_lost {
+        } else if frame.flags & SbusFrame::FRAME_LOST != 0 {
             RxLinkStatus::NoSignal
         } else {
             RxLinkStatus::Ok
@@ -170,8 +136,7 @@ impl SbusParser {
                         Err(_) => [0u8; Self::PAYLOAD_LENGTH], // just return an empty array
                     };
                     let channels = Self::parse_sbus_channels(&data);
-                    let flags = SbusFlags::default();
-                    let sbus_frame = SbusFrame { channels, flags, failsafe: true, frame_lost: true, rssi: 0 };
+                    let sbus_frame = SbusFrame { channels, flags: 0, rssi: 0 };
 
                     return Some(sbus_frame);
                 }
@@ -218,7 +183,6 @@ mod tests {
 
     #[test]
     fn normal_types() {
-        is_full::<SbusFlags>();
         is_full::<SbusFrame>();
         is_normal::<SbusParser>();
     }
