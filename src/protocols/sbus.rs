@@ -2,7 +2,6 @@
 //use embedded_hal_nb::serial::{Error};
 use crate::{RxChannel, RxFrame, RxLinkStatus};
 
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
@@ -17,11 +16,7 @@ impl SbusFrame {
     const FAILSAFE: u8 = 0x08;
 
     pub const fn new() -> Self {
-        Self {
-            channels: [0u16; Self::CHANNEL_COUNT],
-            flags: 0,
-            rssi: 0,
-        }
+        Self { channels: [0u16; Self::CHANNEL_COUNT], flags: 0, rssi: 0 }
     }
 }
 
@@ -75,15 +70,33 @@ impl From<SbusFrame> for RxFrame {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum ParserState {
     WaitingForHeader,
     CollectingPayload { index: usize },
     ValidatingFooter,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct SbusParser {
     state: ParserState,
-    buffer: [u8; 25],
+    buffer: [u8; Self::PACKET_LENGTH],
+}
+
+impl SbusParser {
+    pub const HEADER_LENGTH: usize = 1;
+    pub const PAYLOAD_LENGTH: usize = 22;
+    pub const PACKET_LENGTH: usize = 25;
+
+    pub const fn new() -> Self {
+        Self { state: ParserState::WaitingForHeader, buffer: [0u8; Self::PACKET_LENGTH] }
+    }
+}
+
+impl Default for SbusParser {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// An SBUS frame is 25 bytes total:
@@ -103,9 +116,6 @@ struct SbusParser {
 /// a hardware inverter (a simple NPN transistor or a NOT gate) is required.
 ///
 impl SbusParser {
-    pub const HEADER_LENGTH: usize = 1;
-    pub const PAYLOAD_LENGTH: usize = 22;
-
     /// The feed Method
     /// This is the core logic. It takes one byte and returns a Some(Frame) when a full, valid packet is completed.
     pub fn feed(&mut self, byte: u8) -> Option<SbusFrame> {
@@ -140,6 +150,15 @@ impl SbusParser {
 
                     return Some(sbus_frame);
                 }
+            }
+        }
+        None
+    }
+
+    pub fn parse(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<SbusFrame> {
+        for byte in buffer {
+            if let Some(frame) = self.feed(*byte) {
+                return Some(frame);
             }
         }
         None
@@ -190,5 +209,28 @@ mod tests {
     fn new() {
         let frame = SbusFrame::default();
         assert_eq!(0, frame.rssi);
+    }
+    #[test]
+    fn parse_message() {
+        #[rustfmt::skip]
+        let stream: [u8; SbusParser::PACKET_LENGTH] = [
+            0x0F, // header
+            // 22 u8s
+            0xE0, 0x03, 0x1F, 0x58, 0xC0, 0x07, 0x16, 0xB0, 0x80, 0x05, 0x2C, 
+            0x60, 0x01, 0x0B, 0xF8, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x03, // flags
+            0x00, // footer
+        ];
+
+        let expected_channels: [u16; SbusFrame::CHANNEL_COUNT] =
+            [992, 992, 352, 992, 352, 352, 352, 352, 352, 352, 992, 992, 0, 0, 0, 0];
+
+        let mut sbus_parser = SbusParser::new();
+        if let Some(frame) = sbus_parser.parse(&stream) {
+            let channels = frame.channels;
+            assert_eq!(expected_channels, channels);
+        } else {
+            unreachable!();
+        }
     }
 }

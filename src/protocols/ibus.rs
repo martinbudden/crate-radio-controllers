@@ -96,4 +96,24 @@ mod tests {
         let frame = IbusFrame::default();
         assert_eq!(0, frame.channels[0]);
     }
+    #[test]
+    fn parse_message() {
+        #[rustfmt::skip]
+        let stream: [u8; 32] = [
+            0x20, 0x40, // header
+            // 14 u16s
+            0xDB, 0x05, 0xDC, 0x05, 0x54, 0x05, 0xDC, 0x05, 0xE8, 0x03, 0xD0, 0x07, 0xD2, 0x05,
+            0xE8, 0x03, 0xDC, 0x05, 0xDC, 0x05, 0xDC, 0x05, 0xDC, 0x05, 0xDC, 0x05, 0xDC, 0x05,
+            0xDA, 0xF3, // checksum
+        ];
+        let expected_channels: [u16; 14] =
+            [1499, 1500, 1364, 1500, 1000, 2000, 1490, 1000, 1500, 1500, 1500, 1500, 1500, 1500];
+
+        if let Some(frame) = IbusFrame::parse(&stream) {
+            let channels = frame.channels;
+            assert_eq!(expected_channels, channels);
+        } else {
+            unreachable!();
+        }
+    }
 }
