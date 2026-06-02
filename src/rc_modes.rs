@@ -1,4 +1,4 @@
-use crate::{RadioControlMessage, RxFrame};
+use crate::RxFrame;
 use simple_bitset::BitSet64;
 #[cfg(feature = "serde")]
 use {
@@ -122,6 +122,11 @@ pub struct RcModes {
 }
 
 impl RcModes {
+    pub const STABILIZATION_MODE_RATE: u8 = 0; // aka acro mode
+    pub const STABILIZATION_MODE_ANGLE: u8 = 1;
+    pub const STABILIZATION_MODE_HORIZON: u8 = 2;
+    pub const STABILIZATION_MODE_LEVEL_RACE: u8 = 3;
+
     pub const fn new() -> Self {
         Self {
             active_mac_count: 0,
@@ -300,21 +305,21 @@ impl RcModes {
         let mut stabilization_mode = 0u8;
         if self.is_mode_active(RcModesArray::ANGLE) {
             rc_modes.set(RcModesArray::ANGLE);
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
+            stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
 
         if self.is_mode_active(RcModesArray::HORIZON) {
             rc_modes.set(RcModesArray::HORIZON);
             // we don't support horizon mode, instead we use the horizon mode setting to invoke level race mode
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_LEVEL_RACE;
+            stabilization_mode = Self::STABILIZATION_MODE_LEVEL_RACE;
         }
         if self.is_mode_active(RcModesArray::ALTITUDE_HOLD) {
             rc_modes.set(RcModesArray::ALTITUDE_HOLD);
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
+            stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
         if self.is_mode_active(RcModesArray::POSITION_HOLD) {
             rc_modes.set(RcModesArray::POSITION_HOLD);
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
+            stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
         if self.is_mode_active(RcModesArray::MAG) {
             rc_modes.set(RcModesArray::MAG);
@@ -330,11 +335,11 @@ impl RcModes {
         }
         if self.is_mode_active(RcModesArray::FAILSAFE) {
             rc_modes.set(RcModesArray::FAILSAFE);
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
+            stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
         if self.is_mode_active(RcModesArray::GPS_RESCUE) {
             rc_modes.set(RcModesArray::GPS_RESCUE);
-            stabilization_mode = RadioControlMessage::STABILIZATION_MODE_ANGLE;
+            stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
         (rc_modes, stabilization_mode)
     }

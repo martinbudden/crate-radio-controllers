@@ -19,7 +19,6 @@ mod protocols;
 mod rates;
 mod rc_adjustments;
 mod rc_controls;
-mod rc_message;
 mod rc_modes;
 mod rx_config;
 mod rx_receiver;
@@ -37,5 +36,3 @@ pub use rc_controls::RcControlsConfig;
 pub use rc_modes::{ModeActivationCondition, RcModes, RcModesArray, RxChannelRange};
 pub use rx_config::RxConfig;
 pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
-
-pub use rc_message::RadioControlMessage;

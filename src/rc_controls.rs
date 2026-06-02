@@ -1,5 +1,4 @@
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde")]
 use {
     sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},

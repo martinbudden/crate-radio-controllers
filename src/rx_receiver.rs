@@ -65,6 +65,7 @@ impl RxLinkStatus {
 pub struct RxChannel {}
 
 impl RxChannel {
+    // AETR (ailerons, elevators, throttle, rudder) ordering.
     pub const ROLL: usize = 0;
     pub const PITCH: usize = 1;
     pub const THROTTLE: usize = 2;
@@ -178,8 +179,7 @@ pub trait RxReceiver {
 mod tests {
     use super::*;
 
-    #[allow(unused)]
-    fn is_normal<T: Sized + Send + Sync + Unpin>() {}
+    fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
 
     #[test]

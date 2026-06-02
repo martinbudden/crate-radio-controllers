@@ -24,12 +24,16 @@ impl Default for SbusFlags {
 }
 
 impl SbusFlags {
+    const AUX13: u8 = 0x01;
+    const AUX14: u8 = 0x02;
+    const FRAME_LOST: u8 = 0x04;
+    const FAILSAFE: u8 = 0x08;
     pub fn from_byte(byte: u8) -> Self {
         Self {
-            aux13: (byte & 0x01) != 0,
-            aux14: (byte & 0x02) != 0,
-            frame_lost: (byte & 0x04) != 0,
-            failsafe: (byte & 0x08) != 0,
+            aux13: (byte & Self::AUX13) != 0,
+            aux14: (byte & Self::AUX14) != 0,
+            frame_lost: (byte & Self::FRAME_LOST) != 0,
+            failsafe: (byte & Self::FAILSAFE) != 0,
         }
     }
 }
@@ -209,7 +213,6 @@ impl SbusParser {
 mod tests {
     use super::*;
 
-    #[allow(unused)]
     fn is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
 
