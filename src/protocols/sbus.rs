@@ -70,10 +70,13 @@ impl From<SbusFrame> for RxFrame {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum ParserState {
+    #[default]
     WaitingForHeader,
-    CollectingPayload { index: usize },
+    CollectingPayload {
+        index: usize,
+    },
     ValidatingFooter,
 }
 
@@ -203,7 +206,8 @@ mod tests {
     #[test]
     fn normal_types() {
         is_full::<SbusFrame>();
-        is_normal::<SbusParser>();
+        is_full::<SbusParser>();
+        is_full::<ParserState>();
     }
     #[test]
     fn new() {

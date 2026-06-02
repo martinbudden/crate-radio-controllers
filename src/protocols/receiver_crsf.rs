@@ -78,6 +78,7 @@ impl CrsfReceiver {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CrsfFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
     pub failsafe: bool,
@@ -87,6 +88,15 @@ pub struct CrsfFrame {
 
 impl CrsfFrame {
     const CHANNEL_COUNT: usize = 16;
+    pub const fn new() -> Self {
+        Self { channels: [0u16; Self::CHANNEL_COUNT], failsafe: false, frame_lost: false, rssi: 0 }
+    }
+}
+
+impl Default for CrsfFrame {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl From<CrsfFrame> for RxFrame {
@@ -188,6 +198,7 @@ mod tests {
     #[test]
     fn normal_types() {
         is_full::<CrsfReceiver>();
+        is_full::<CrsfFrame>();
     }
     #[test]
     fn new() {
