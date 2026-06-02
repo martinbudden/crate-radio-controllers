@@ -31,7 +31,7 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Changed
 
-- Made `serde` and optional feature.
+- Made `serde` an optional feature.
 
 ### Removed
 

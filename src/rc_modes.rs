@@ -1,7 +1,10 @@
 use crate::{RadioControlMessage, RxFrame};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use simple_bitset::BitSet64;
+#[cfg(feature = "serde")]
+use {
+    sequential_storage::map::PostcardValue,
+    serde::{Deserialize, Serialize},
+};
 
 /// PWM channels are divided into "steps". Steps are 25 units wide<br>
 /// There are 48 steps between 900 and 2100.<br>
@@ -23,6 +26,9 @@ impl RxChannelRange {
         Self { start: 0, end: 0 }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RxChannelRange {}
 
 impl Default for RxChannelRange {
     fn default() -> Self {
@@ -93,6 +99,9 @@ impl ModeActivationCondition {
     }
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for ModeActivationCondition {}
+
 impl Default for ModeActivationCondition {
     fn default() -> Self {
         Self::new()
@@ -125,6 +134,9 @@ impl RcModes {
         }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcModes {}
 
 impl Default for RcModes {
     fn default() -> Self {
@@ -330,6 +342,7 @@ impl RcModes {
 
 /// Human readable name for an `RcMode`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcMode {
     pub id: u8,
     pub permanent_id: u8,
@@ -338,6 +351,7 @@ pub struct RcMode {
 
 /// Radio control modes, including armed/disarmed and flight modes.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RcModesArray {
     active_ids: BitSet64,
 }
@@ -347,6 +361,9 @@ impl RcModesArray {
         Self { active_ids: BitSet64::new() }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcModesArray {}
 
 impl Default for RcModesArray {
     fn default() -> Self {
@@ -489,24 +506,24 @@ mod tests {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<
-        T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
-    >() {
-    }
+    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RxChannelRange>();
         is_full::<ModeActivationCondition>();
         is_full::<RcModes>();
+        is_full::<RcModesArray>();
+        is_full::<RcMode>();
+
         #[cfg(feature = "serde")]
         is_config::<RxChannelRange>();
         #[cfg(feature = "serde")]
         is_config::<ModeActivationCondition>();
         #[cfg(feature = "serde")]
         is_config::<RcModes>();
-        is_full::<RcModesArray>();
-        is_full::<RcMode>();
+        #[cfg(feature = "serde")]
+        is_config::<RcModesArray>();
     }
     #[test]
     fn test_new() {

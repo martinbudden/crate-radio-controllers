@@ -1,5 +1,8 @@
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use {
+    sequential_storage::map::PostcardValue,
+    serde::{Deserialize, Serialize},
+};
 
 /// Configuration data for Rates.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -50,6 +53,9 @@ impl RatesConfig {
         }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RatesConfig {}
 
 impl Default for RatesConfig {
     fn default() -> Self {
@@ -145,10 +151,7 @@ mod tests {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<
-        T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
-    >() {
-    }
+    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {

@@ -1,6 +1,9 @@
 use crate::RxChannelRange;
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use {
+    sequential_storage::map::PostcardValue,
+    serde::{Deserialize, Serialize},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -28,13 +31,16 @@ impl RcAdjustmentRange {
     }
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentRange {}
+
 impl Default for RcAdjustmentRange {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RcAdjustmentMode {
     #[default]
@@ -47,6 +53,9 @@ impl RcAdjustmentMode {
         Self::Step
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentMode {}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -61,6 +70,9 @@ impl RcTimedAdjustmentState {
         Self { timeout_at_milliseconds: 0, adjustment_range_index: 0, ready: 0 }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcTimedAdjustmentState {}
 
 impl Default for RcTimedAdjustmentState {
     fn default() -> Self {
@@ -81,6 +93,9 @@ impl RcContinuosAdjustmentState {
     }
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcContinuosAdjustmentState {}
+
 impl Default for RcContinuosAdjustmentState {
     fn default() -> Self {
         Self::new()
@@ -99,6 +114,9 @@ impl RcAdjustmentData {
         Self { step: 0, switch_positions: 0 }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentData {}
 
 impl Default for RcAdjustmentData {
     fn default() -> Self {
@@ -120,6 +138,9 @@ impl RcAdjustmentConfig {
     }
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentConfig {}
+
 impl Default for RcAdjustmentConfig {
     fn default() -> Self {
         Self::new()
@@ -133,19 +154,28 @@ mod tests {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<
-        T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq + Serialize + for<'a> Deserialize<'a>,
-    >() {
-    }
+    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RcAdjustmentRange>();
+        #[cfg(feature = "serde")]
+        is_config::<RcAdjustmentRange>();
         is_full::<RcAdjustmentMode>();
+        #[cfg(feature = "serde")]
+        is_config::<RcAdjustmentMode>();
         is_full::<RcTimedAdjustmentState>();
+        #[cfg(feature = "serde")]
+        is_config::<RcTimedAdjustmentState>();
         is_full::<RcContinuosAdjustmentState>();
+        #[cfg(feature = "serde")]
+        is_config::<RcContinuosAdjustmentState>();
         is_full::<RcAdjustmentData>();
+        #[cfg(feature = "serde")]
+        is_config::<RcAdjustmentData>();
         is_full::<RcAdjustmentRange>();
+        #[cfg(feature = "serde")]
+        is_config::<RcAdjustmentRange>();
     }
     #[cfg(feature = "serde")]
     #[test]

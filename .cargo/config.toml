@@ -15,11 +15,9 @@ rustflags = [
 runner = "probe-rs run --chip RP2350"
 rustflags = [
     "-C", "target-cpu=cortex-m33",
-    "-C", "link-arg=-Tlink.x", 
+    "-C", "link-arg=-Tlink.x",
 ]
 
 [build]
 # Optional: Set a default target so you don't have to pass --target to cargo every time
-# target = "thumbv8m.main-none-eabihf" 
-
-
+# target = "thumbv8m.main-none-eabihf"
