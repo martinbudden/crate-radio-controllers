@@ -222,11 +222,13 @@ dependencies = [
 
 [[package]]
 name = "simple-bitset"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "431d1782913c4497aada32f32d37b6eee75bfc762c698aff472cf78c2c8a036f"
+checksum = "37216d71fa77e7610da45d495779a286bc79a9ec8a4f896d2fbb44150f15e63c"
 dependencies = [
  "postcard",
+ "rustc_version",
+ "sequential-storage",
  "serde",
 ]
 
