@@ -19,6 +19,9 @@ pub struct RatesConfig {
                                     //pub rates_type: u8, // not used
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RatesConfig {}
+
 impl RatesConfig {
     pub const AXIS_COUNT: usize = 3;
 
@@ -53,9 +56,6 @@ impl RatesConfig {
         }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RatesConfig {}
 
 impl Default for RatesConfig {
     fn default() -> Self {

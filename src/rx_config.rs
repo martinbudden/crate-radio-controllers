@@ -24,6 +24,9 @@ pub struct RxConfig {
     pub rx_max_us: u16, // rx_max in microseconds
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RxConfig {}
+
 impl RxConfig {
     pub const fn new() -> Self {
         Self {
@@ -45,9 +48,6 @@ impl RxConfig {
         }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RxConfig {}
 
 impl Default for RxConfig {
     fn default() -> Self {

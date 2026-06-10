@@ -18,6 +18,9 @@ pub struct RcAdjustmentRange {
     pub adjustment_scale: u16,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentRange {}
+
 impl RcAdjustmentRange {
     pub const fn new() -> Self {
         Self {
@@ -30,9 +33,6 @@ impl RcAdjustmentRange {
         }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcAdjustmentRange {}
 
 impl Default for RcAdjustmentRange {
     fn default() -> Self {
@@ -48,14 +48,14 @@ pub enum RcAdjustmentMode {
     Select,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentMode {}
+
 impl RcAdjustmentMode {
     pub const fn new() -> Self {
         Self::Step
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcAdjustmentMode {}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -65,14 +65,14 @@ pub struct RcTimedAdjustmentState {
     pub ready: u8,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcTimedAdjustmentState {}
+
 impl RcTimedAdjustmentState {
     pub const fn new() -> Self {
         Self { timeout_at_milliseconds: 0, adjustment_range_index: 0, ready: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcTimedAdjustmentState {}
 
 impl Default for RcTimedAdjustmentState {
     fn default() -> Self {
@@ -87,14 +87,14 @@ pub struct RcContinuosAdjustmentState {
     pub last_rc_data: u16,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcContinuosAdjustmentState {}
+
 impl RcContinuosAdjustmentState {
     pub const fn new() -> Self {
         Self { adjustment_range_index: 0, last_rc_data: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcContinuosAdjustmentState {}
 
 impl Default for RcContinuosAdjustmentState {
     fn default() -> Self {
@@ -109,14 +109,14 @@ pub struct RcAdjustmentData {
     pub switch_positions: u8,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentData {}
+
 impl RcAdjustmentData {
     pub const fn new() -> Self {
         Self { step: 0, switch_positions: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcAdjustmentData {}
 
 impl Default for RcAdjustmentData {
     fn default() -> Self {
@@ -132,14 +132,14 @@ pub struct RcAdjustmentConfig {
     pub data: u8,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcAdjustmentConfig {}
+
 impl RcAdjustmentConfig {
     pub const fn new() -> Self {
         Self { adjustment: 0, adjustment_mode: 0, data: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcAdjustmentConfig {}
 
 impl Default for RcAdjustmentConfig {
     fn default() -> Self {

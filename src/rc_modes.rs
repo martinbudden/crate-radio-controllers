@@ -1,5 +1,6 @@
 use crate::RxFrame;
 use simple_bitset::BitSet64;
+
 #[cfg(feature = "serde")]
 use {
     sequential_storage::map::PostcardValue,
@@ -21,14 +22,14 @@ pub struct RxChannelRange {
     pub end: u8,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RxChannelRange {}
+
 impl RxChannelRange {
     pub const fn new() -> Self {
         Self { start: 0, end: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RxChannelRange {}
 
 impl Default for RxChannelRange {
     fn default() -> Self {
@@ -93,14 +94,14 @@ pub struct ModeActivationCondition {
     pub linked_to: u8,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for ModeActivationCondition {}
+
 impl ModeActivationCondition {
     pub const fn new() -> Self {
         Self { range: RxChannelRange::new(), mode_id: 0, aux_channel_index: 0, mode_logic: 0, linked_to: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for ModeActivationCondition {}
 
 impl Default for ModeActivationCondition {
     fn default() -> Self {
@@ -121,6 +122,9 @@ pub struct RcModes {
     pub macs: [ModeActivationCondition; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcModes {}
+
 impl RcModes {
     pub const STABILIZATION_MODE_RATE: u8 = 0; // aka acro mode
     pub const STABILIZATION_MODE_ANGLE: u8 = 1;
@@ -139,9 +143,6 @@ impl RcModes {
         }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcModes {}
 
 impl Default for RcModes {
     fn default() -> Self {
@@ -361,14 +362,14 @@ pub struct RcModesArray {
     active_ids: BitSet64,
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcModesArray {}
+
 impl RcModesArray {
     pub const fn new() -> Self {
         Self { active_ids: BitSet64::new() }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcModesArray {}
 
 impl Default for RcModesArray {
     fn default() -> Self {
@@ -394,47 +395,48 @@ impl RcModesArray {
     pub const PASSTHRU: u8 = 8;
     pub const FAILSAFE: u8 = 9;
     pub const GPS_RESCUE: u8 = 10;
-    pub const FLIGHTMODE_COUNT: u8 = 11;
+    pub const AUTOPILOT: u8 = 11; // GPS path following
+    pub const FLIGHTMODE_COUNT: u8 = 12;
 
     // RC mode flags
     pub const ANTIGRAVITY: u8 = Self::FLIGHTMODE_COUNT;
-    pub const HEADADJ: u8 = 12;
-    pub const CAMSTAB: u8 = 13;
-    pub const BEEPER_ON: u8 = 14;
-    pub const LED_LOW: u8 = 15;
-    pub const CALIBRATE: u8 = 16;
-    pub const OSD: u8 = 17;
-    pub const TELEMETRY: u8 = 18;
-    pub const SERVO1: u8 = 19;
-    pub const SERVO2: u8 = 20;
-    pub const SERVO3: u8 = 21;
-    pub const BLACKBOX: u8 = 22;
-    pub const AIRMODE: u8 = 23;
-    pub const MODE_3D: u8 = 24;
-    pub const FPV_ANGLE_MIX: u8 = 25;
-    pub const BLACKBOX_ERASE: u8 = 26;
-    pub const CAMERA1: u8 = 27;
-    pub const CAMERA2: u8 = 28;
-    pub const CAMERA3: u8 = 29;
-    pub const CRASH_FLIP: u8 = 30;
-    pub const PREARM: u8 = 31;
-    pub const BEEP_GPS_COUNT: u8 = 32;
-    pub const VTX_PIT_MODE: u8 = 33;
-    pub const PARALYZE: u8 = 34;
-    pub const USER1: u8 = 35;
-    pub const USER2: u8 = 36;
-    pub const USER3: u8 = 37;
-    pub const USER4: u8 = 38;
-    pub const PID_AUDIO: u8 = 39;
-    pub const ACRO_TRAINER: u8 = 40;
-    pub const VTX_CONTROL_DISABLE: u8 = 41;
-    pub const LAUNCH_CONTROL: u8 = 42;
-    pub const MSP_OVERRIDE: u8 = 43;
-    pub const STICK_COMMAND_DISABLE: u8 = 44;
-    pub const BEEPER_MUTE: u8 = 45;
-    pub const READY: u8 = 46;
-    pub const LAP_TIMER_RESET: u8 = 47;
-    pub const COUNT: u8 = 47;
+    pub const HEADADJ: u8 = 13;
+    pub const CAMSTAB: u8 = 14;
+    pub const BEEPER_ON: u8 = 15;
+    pub const LED_LOW: u8 = 16;
+    pub const CALIBRATE: u8 = 17;
+    pub const OSD: u8 = 18;
+    pub const TELEMETRY: u8 = 19;
+    pub const SERVO1: u8 = 20;
+    pub const SERVO2: u8 = 21;
+    pub const SERVO3: u8 = 22;
+    pub const BLACKBOX: u8 = 23;
+    pub const AIRMODE: u8 = 24;
+    pub const MODE_3D: u8 = 25;
+    pub const FPV_ANGLE_MIX: u8 = 26;
+    pub const BLACKBOX_ERASE: u8 = 27;
+    pub const CAMERA1: u8 = 28;
+    pub const CAMERA2: u8 = 29;
+    pub const CAMERA3: u8 = 30;
+    pub const CRASH_FLIP: u8 = 31;
+    pub const PREARM: u8 = 32;
+    pub const BEEP_GPS_COUNT: u8 = 33;
+    pub const VTX_PIT_MODE: u8 = 34;
+    pub const PARALYZE: u8 = 35;
+    pub const USER1: u8 = 36;
+    pub const USER2: u8 = 37;
+    pub const USER3: u8 = 38;
+    pub const USER4: u8 = 39;
+    pub const PID_AUDIO: u8 = 40;
+    pub const ACRO_TRAINER: u8 = 41;
+    pub const VTX_CONTROL_DISABLE: u8 = 42;
+    pub const LAUNCH_CONTROL: u8 = 43;
+    pub const MSP_OVERRIDE: u8 = 44;
+    pub const STICK_COMMAND_DISABLE: u8 = 45;
+    pub const BEEPER_MUTE: u8 = 46;
+    pub const READY: u8 = 47;
+    pub const LAP_TIMER_RESET: u8 = 48;
+    pub const COUNT: u8 = 49;
 
     pub const RC_MODES: [RcMode; Self::COUNT as usize] = [
         RcMode { id: Self::ARM, permanent_id: 0, name: "ARM" },
@@ -492,6 +494,8 @@ impl RcModesArray {
         RcMode { id: Self::BEEPER_MUTE, permanent_id: 52, name: "BEEPER MUTE" },
         RcMode { id: Self::READY, permanent_id: 53, name: "READY" },
         RcMode { id: Self::LAP_TIMER_RESET, permanent_id: 54, name: "LAP TIMER RESET" },
+        RcMode { id: Self::CHIRP, permanent_id: 55, name: "CHIRP" },
+        RcMode { id: Self::AUTOPILOT, permanent_id: 56, name: "AUTOPILOT" },
     ];
 }
 

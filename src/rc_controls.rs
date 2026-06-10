@@ -12,14 +12,14 @@ pub struct RcControlsConfig {
     pub yaw_control_reversed: u8, // allow rx to operate in half duplex mode on STM32 F4, ignored for F1 and F3.
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RcControlsConfig {}
+
 impl RcControlsConfig {
     pub const fn new() -> Self {
         Self { deadband: 0, yaw_deadband: 0, yaw_control_reversed: 0 }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcControlsConfig {}
 
 impl Default for RcControlsConfig {
     fn default() -> Self {

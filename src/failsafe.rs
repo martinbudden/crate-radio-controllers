@@ -18,6 +18,9 @@ pub struct FailsafeConfig {
     pub stick_threshold_percent: u8, // _stick deflection percentage to exit GPS Rescue procedure
 }
 
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for FailsafeConfig {}
+
 impl FailsafeConfig {
     pub const DISARMED: u8 = 0;
     pub const IDLE: u8 = 1;
@@ -50,9 +53,6 @@ impl FailsafeConfig {
         }
     }
 }
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for FailsafeConfig {}
 
 impl Default for FailsafeConfig {
     fn default() -> Self {
