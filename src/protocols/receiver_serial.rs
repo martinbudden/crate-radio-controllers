@@ -16,7 +16,7 @@ impl Default for ReceiverSerial {
 }
 
 impl ReceiverSerial {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self { packet_is_empty: true, received_packet_count: 0, error_packet_count: 0, packet_index: 0, start_time: 0 }
     }
 }

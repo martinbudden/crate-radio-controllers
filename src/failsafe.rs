@@ -40,6 +40,7 @@ impl FailsafeConfig {
     pub const SWITCH_MODE_STAGE2: u8 = 2;
     pub const SWITCH_MODE_KILL: u8 = 3;
 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             throttle_pwm: 1000, // throttle off

@@ -34,6 +34,7 @@ impl From<RxControlsPwm> for RcSticks {
 }
 
 impl RcSticks {
+    #[must_use]
     pub const fn new() -> Self {
         Self { roll: 0.0, pitch: 0.0, yaw: 0.0, throttle: 0.0 }
     }
@@ -60,19 +61,23 @@ impl Default for RxControlsPwm {
 }
 
 impl RxControlsPwm {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self { throttle: RxChannel::LOW, roll: RxChannel::MID, pitch: RxChannel::MID, yaw: RxChannel::MID }
     }
 }
 
 impl RxControlsPwm {
     // course gained values of pwm. Can be used to allow the receiver act like cursor keys to navigate a menu system
+    #[must_use]
     pub fn pwm_is_high(pwm: u16) -> bool {
         pwm >= 1750
     }
+    #[must_use]
     pub fn pwm_is_low(pwm: u16) -> bool {
         pwm <= 1250
     }
+    #[must_use]
     pub fn pwm_is_mid(pwm: u16) -> bool {
         pwm > 1250 && pwm < 1750
     }

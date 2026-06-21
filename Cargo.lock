@@ -222,9 +222,9 @@ dependencies = [
 
 [[package]]
 name = "simple-bitset"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37216d71fa77e7610da45d495779a286bc79a9ec8a4f896d2fbb44150f15e63c"
+checksum = "8d01de744a845a8ada95df2637c376585112dc26290924ce83c272bcc643230c"
 dependencies = [
  "postcard",
  "rustc_version",
@@ -249,9 +249,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "syn"
-version = "2.0.117"
+version = "2.0.118"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99"
+checksum = "1b9ae57f904213ebb649ce6895b8a66c66f0203b9319718f69a5612a065b1422"
 dependencies = [
  "proc-macro2",
  "quote",

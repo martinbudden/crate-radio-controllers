@@ -202,11 +202,9 @@ impl CrsfParser {
             // unpack packet_length bytes starting at PACKET_DATA_OFFSET
             //let packet_length = packet[Self::PACKET_LENGTH_OFFSET] as usize;
 
-            let data: CrsfPayload =
-                match packet[Self::PACKET_DATA_OFFSET..Self::PACKET_DATA_OFFSET + Self::PACKET_LENGTH].try_into() {
-                    Ok(arr) => arr,
-                    Err(_) => CrsfPayload::default(), // just return an empty payload
-                };
+            let data: CrsfPayload = packet[Self::PACKET_DATA_OFFSET..Self::PACKET_DATA_OFFSET + Self::PACKET_LENGTH]
+                .try_into()
+                .unwrap_or_default();
             //let count;
             //(self.channels, count) = CrsfReceiver::unpack_11bit_channels(&data);
             //return count;

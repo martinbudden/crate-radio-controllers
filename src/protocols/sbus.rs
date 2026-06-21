@@ -144,10 +144,8 @@ impl SbusParser {
                 self.state = ParserState::WaitingForHeader;
                 if byte == 0x00 {
                     // SBUS Footer
-                    let data: [u8; Self::PAYLOAD_LENGTH] = match self.buffer[1..23].try_into() {
-                        Ok(arr) => arr,
-                        Err(_) => [0u8; Self::PAYLOAD_LENGTH], // just return an empty array
-                    };
+                    let data: [u8; Self::PAYLOAD_LENGTH] =
+                        self.buffer[1..23].try_into().unwrap_or([0u8; Self::PAYLOAD_LENGTH]);
                     let channels = Self::parse_sbus_channels(&data);
                     let sbus_frame = SbusFrame { channels, flags: 0, rssi: 0 };
 

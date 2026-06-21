@@ -65,11 +65,12 @@ impl CrsfReceiver {
     const _COMMAND_SUBCMD_GENERAL_CRSF_SPEED_RESPONSE: u8 = 0x71;
     const MAX_PACKET_SIZE: usize = CrsfParser::MAX_PACKET_SIZE;
 
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
-            common: RxReceiverCommon::default(),
-            serial: ReceiverSerial::default(),
-            channels: <[u16; CrsfFrame::CHANNEL_COUNT]>::default(),
+            common: RxReceiverCommon::new(),
+            serial: ReceiverSerial::new(),
+            channels: [0u16; CrsfFrame::CHANNEL_COUNT],
             packet_size: 0,
             packet_type: 0,
             packet_isr: [0u8; Self::MAX_PACKET_SIZE],

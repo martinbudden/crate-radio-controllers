@@ -5,8 +5,9 @@ pub struct Eui48 {
 }
 
 impl Eui48 {
-    pub fn new() -> Self {
-        Self::default()
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { octets: [0u8; 6] }
     }
 }
 
@@ -31,7 +32,8 @@ impl Default for RxReceiverCommon {
 
 impl RxReceiverCommon {
     // standardize receivers to use AETR (Ailerons, Elevator, Throttle, Rudder), ie ROLL, PITCH, THROTTLE, YAW
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             packet_received: false,
             new_packet_available: false,
@@ -55,6 +57,7 @@ pub enum RxLinkStatus {
 }
 
 impl RxLinkStatus {
+    #[must_use]
     pub const fn new() -> Self {
         Self::Ok
     }
@@ -107,6 +110,7 @@ pub struct RxFrame {
 }
 
 impl RxFrame {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             channels: [
@@ -147,10 +151,12 @@ impl RxFrame {
     pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW; // center
 
     /// Returns true if the frame is safe to use for flight control.
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         self.status == RxLinkStatus::Ok
     }
     /// Returns value of auxiliary channel, or `RxChannel::LOW` if channel index invalid.
+    #[must_use]
     pub fn auxiliary_channel(&self, channel_index: u8) -> u16 {
         let index = usize::from(channel_index);
         if index < Self::MAX_CHANNEL_COUNT && index > RxChannel::AUX1 {

@@ -16,7 +16,8 @@ impl Default for MockUart {
 }
 
 impl MockUart {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self { data: [0; 64], read_pos: 0, write_pos: 0 }
     }
     /// Helper to load the mock with test data (eg an SBUS packet).

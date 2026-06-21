@@ -13,9 +13,16 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Added
 
+- `#[must_use]` attribute to selected functions.
+
 ### Changed
 
+- updated to `simple-bitset` version 0.1.2.
+- `new` functions to `const` where possible.
+
 ### Removed
+
+- `allow`s from `lib.rs`.
 
 ### Deprecated
 

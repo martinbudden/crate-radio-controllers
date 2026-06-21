@@ -42,6 +42,7 @@ impl RatesConfig {
     pub const THROTTLE_LIMIT_TYPE_CLIP: u8 = 2;
     pub const THROTTLE_LIMIT_TYPE_COUNT: u8 = 3;
 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             limits: [Self::LIMIT_MAX, Self::LIMIT_MAX, Self::LIMIT_MAX],
@@ -79,6 +80,7 @@ pub struct Rates {
 }
 
 impl Rates {
+    #[must_use]
     pub fn new(config: RatesConfig) -> Self {
         Self {
             limits: [f32::from(config.limits[0]), f32::from(config.limits[1]), f32::from(config.limits[2])],
@@ -127,6 +129,7 @@ impl Rates {
         self.rates = [0.0, 0.0, 0.0]; // movement sensitivity, linear
         //self.rates.rates_type = Self::TYPE_ACTUAL;
     }
+    #[must_use]
     pub fn apply(self, axis: usize, rc_command: f32) -> f32 {
         let rc_command2 = rc_command * rc_command;
         let rc_command_abs = rc_command.abs();

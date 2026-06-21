@@ -26,6 +26,7 @@ pub struct RxChannelRange {
 impl PostcardValue<'_> for RxChannelRange {}
 
 impl RxChannelRange {
+    #[must_use]
     pub const fn new() -> Self {
         Self { start: 0, end: 0 }
     }
@@ -63,10 +64,12 @@ impl RxChannelRange {
         }
     }
 
+    #[must_use]
     pub fn pwm_range(&self) -> (u16, u16) {
         (Self::step_to_pwm(self.start), Self::step_to_pwm(self.end))
     }
 
+    #[must_use]
     pub fn is_range_active(channel_value: u16, start: u8, end: u8) -> bool {
         if channel_value >= Self::MIN + u16::from(start) * Self::STEP
             && channel_value < Self::MIN + u16::from(end) * Self::STEP
@@ -76,6 +79,7 @@ impl RxChannelRange {
         false
     }
 
+    #[must_use]
     pub fn is_active(&self, rx_frame: &RxFrame, aux_channel_index: u8) -> bool {
         let channel_value: u16 = rx_frame.auxiliary_channel(aux_channel_index);
         Self::is_range_active(channel_value, self.start, self.end)
@@ -98,6 +102,7 @@ pub struct ModeActivationCondition {
 impl PostcardValue<'_> for ModeActivationCondition {}
 
 impl ModeActivationCondition {
+    #[must_use]
     pub const fn new() -> Self {
         Self { range: RxChannelRange::new(), mode_id: 0, aux_channel_index: 0, mode_logic: 0, linked_to: 0 }
     }
@@ -131,6 +136,7 @@ impl RcModes {
     pub const STABILIZATION_MODE_HORIZON: u8 = 2;
     pub const STABILIZATION_MODE_LEVEL_RACE: u8 = 3;
 
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             active_mac_count: 0,
@@ -167,6 +173,7 @@ impl RcModes {
     }
 
     /// # Panics
+    #[must_use]
     pub fn mac(&self, index: usize) -> ModeActivationCondition {
         assert!(index < Self::MAX_MODE_ACTIVATION_CONDITION_COUNT);
         self.macs[index]
@@ -177,6 +184,7 @@ impl RcModes {
             self.macs[index] = mac;
         }
     }
+    #[must_use]
     pub fn is_mode_active(&self, rc_mode: u8) -> bool {
         self.active_modes.test(rc_mode)
     }
@@ -301,6 +309,7 @@ impl RcModes {
         self.active_modes = new_bitset ^ and_bitset;
     }
 
+    #[must_use]
     pub fn update_modes(&self) -> (BitSet64, u8) {
         let mut rc_modes = BitSet64::default();
         let mut stabilization_mode = 0u8;
@@ -366,6 +375,7 @@ pub struct RcModesArray {
 impl PostcardValue<'_> for RcModesArray {}
 
 impl RcModesArray {
+    #[must_use]
     pub const fn new() -> Self {
         Self { active_ids: BitSet64::new() }
     }
@@ -500,9 +510,11 @@ impl RcModesArray {
 }
 
 impl RcModesArray {
+    #[must_use]
     pub fn find_rc_mode_by_id(id: u8) -> Option<RcMode> {
         Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.id)
     }
+    #[must_use]
     pub fn find_rc_mode_by_permanent_id(id: u8) -> Option<RcMode> {
         Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.permanent_id)
     }
