@@ -31,6 +31,7 @@ impl Default for CrsfReceiver {
     }
 }
 
+#[allow(missing_docs)]
 impl CrsfReceiver {
     // 8N1
     const _DATA_BITS: u8 = 8;
@@ -64,7 +65,10 @@ impl CrsfReceiver {
     const _COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL: u8 = 0x70;
     const _COMMAND_SUBCMD_GENERAL_CRSF_SPEED_RESPONSE: u8 = 0x71;
     const MAX_PACKET_SIZE: usize = CrsfParser::MAX_PACKET_SIZE;
+}
 
+impl CrsfReceiver {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {

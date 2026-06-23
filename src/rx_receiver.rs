@@ -5,6 +5,7 @@ pub struct Eui48 {
 }
 
 impl Eui48 {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { octets: [0u8; 6] }
@@ -32,6 +33,7 @@ impl Default for RxReceiverCommon {
 
 impl RxReceiverCommon {
     // standardize receivers to use AETR (Ailerons, Elevator, Throttle, Rudder), ie ROLL, PITCH, THROTTLE, YAW
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -57,6 +59,7 @@ pub enum RxLinkStatus {
 }
 
 impl RxLinkStatus {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self::Ok
@@ -67,6 +70,7 @@ impl RxLinkStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RxChannel {}
 
+#[allow(missing_docs)]
 impl RxChannel {
     // AETR (ailerons, elevators, throttle, rudder) ordering.
     pub const ROLL: usize = 0;
@@ -110,6 +114,7 @@ pub struct RxFrame {
 }
 
 impl RxFrame {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {

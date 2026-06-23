@@ -22,6 +22,7 @@ pub struct RatesConfig {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RatesConfig {}
 
+#[allow(missing_docs)]
 impl RatesConfig {
     pub const AXIS_COUNT: usize = 3;
 
@@ -41,7 +42,10 @@ impl RatesConfig {
     pub const THROTTLE_LIMIT_TYPE_SCALE: u8 = 1;
     pub const THROTTLE_LIMIT_TYPE_CLIP: u8 = 2;
     pub const THROTTLE_LIMIT_TYPE_COUNT: u8 = 3;
+}
 
+impl RatesConfig {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {

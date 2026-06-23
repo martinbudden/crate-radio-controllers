@@ -28,6 +28,7 @@ pub struct RxConfig {
 impl PostcardValue<'_> for RxConfig {}
 
 impl RxConfig {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {

@@ -22,6 +22,7 @@ pub struct RcAdjustmentRange {
 impl PostcardValue<'_> for RcAdjustmentRange {}
 
 impl RcAdjustmentRange {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -53,6 +54,7 @@ pub enum RcAdjustmentMode {
 impl PostcardValue<'_> for RcAdjustmentMode {}
 
 impl RcAdjustmentMode {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self::Step
@@ -71,6 +73,7 @@ pub struct RcTimedAdjustmentState {
 impl PostcardValue<'_> for RcTimedAdjustmentState {}
 
 impl RcTimedAdjustmentState {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { timeout_at_milliseconds: 0, adjustment_range_index: 0, ready: 0 }
@@ -94,6 +97,7 @@ pub struct RcContinuosAdjustmentState {
 impl PostcardValue<'_> for RcContinuosAdjustmentState {}
 
 impl RcContinuosAdjustmentState {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { adjustment_range_index: 0, last_rc_data: 0 }
@@ -117,6 +121,7 @@ pub struct RcAdjustmentData {
 impl PostcardValue<'_> for RcAdjustmentData {}
 
 impl RcAdjustmentData {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { step: 0, switch_positions: 0 }
@@ -141,6 +146,7 @@ pub struct RcAdjustmentConfig {
 impl PostcardValue<'_> for RcAdjustmentConfig {}
 
 impl RcAdjustmentConfig {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { adjustment: 0, adjustment_mode: 0, data: 0 }

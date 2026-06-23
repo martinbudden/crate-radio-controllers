@@ -34,6 +34,7 @@ impl From<RxControlsPwm> for RcSticks {
 }
 
 impl RcSticks {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { roll: 0.0, pitch: 0.0, yaw: 0.0, throttle: 0.0 }
@@ -61,6 +62,7 @@ impl Default for RxControlsPwm {
 }
 
 impl RxControlsPwm {
+    // Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { throttle: RxChannel::LOW, roll: RxChannel::MID, pitch: RxChannel::MID, yaw: RxChannel::MID }

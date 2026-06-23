@@ -16,6 +16,7 @@ pub struct RcControlsConfig {
 impl PostcardValue<'_> for RcControlsConfig {}
 
 impl RcControlsConfig {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { deadband: 0, yaw_deadband: 0, yaw_control_reversed: 0 }

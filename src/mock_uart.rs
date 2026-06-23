@@ -16,6 +16,7 @@ impl Default for MockUart {
 }
 
 impl MockUart {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { data: [0; 64], read_pos: 0, write_pos: 0 }

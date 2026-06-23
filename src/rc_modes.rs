@@ -26,6 +26,7 @@ pub struct RxChannelRange {
 impl PostcardValue<'_> for RxChannelRange {}
 
 impl RxChannelRange {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { start: 0, end: 0 }
@@ -102,6 +103,7 @@ pub struct ModeActivationCondition {
 impl PostcardValue<'_> for ModeActivationCondition {}
 
 impl ModeActivationCondition {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { range: RxChannelRange::new(), mode_id: 0, aux_channel_index: 0, mode_logic: 0, linked_to: 0 }
@@ -375,6 +377,7 @@ pub struct RcModesArray {
 impl PostcardValue<'_> for RcModesArray {}
 
 impl RcModesArray {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { active_ids: BitSet64::new() }
@@ -387,6 +390,7 @@ impl Default for RcModesArray {
     }
 }
 
+#[allow(missing_docs)]
 impl RcModesArray {
     pub const MAX_MODES_PER_PAGE: u8 = 32;
     pub const PERMANENT_ID_NONE: u8 = 255;

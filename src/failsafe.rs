@@ -21,6 +21,7 @@ pub struct FailsafeConfig {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for FailsafeConfig {}
 
+#[allow(missing_docs)]
 impl FailsafeConfig {
     pub const DISARMED: u8 = 0;
     pub const IDLE: u8 = 1;
@@ -39,7 +40,10 @@ impl FailsafeConfig {
     pub const SWITCH_MODE_STAGE1: u8 = 0;
     pub const SWITCH_MODE_STAGE2: u8 = 2;
     pub const SWITCH_MODE_KILL: u8 = 3;
+}
 
+impl FailsafeConfig {
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
