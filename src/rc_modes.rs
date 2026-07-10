@@ -314,43 +314,43 @@ impl RcModes {
     #[must_use]
     pub fn update_modes(&self) -> (BitSet64, u8) {
         let mut rc_modes = BitSet64::default();
-        let mut stabilization_mode = 0u8;
-        if self.is_mode_active(RcModesArray::ANGLE) {
-            rc_modes.set(RcModesArray::ANGLE);
+        let mut stabilization_mode = Self::STABILIZATION_MODE_RATE;
+
+        if self.is_mode_active(RcMode::ANGLE) {
+            rc_modes.set(RcMode::ANGLE);
             stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
-
-        if self.is_mode_active(RcModesArray::HORIZON) {
-            rc_modes.set(RcModesArray::HORIZON);
+        if self.is_mode_active(RcMode::HORIZON) {
+            rc_modes.set(RcMode::HORIZON);
             // we don't support horizon mode, instead we use the horizon mode setting to invoke level race mode
             stabilization_mode = Self::STABILIZATION_MODE_LEVEL_RACE;
         }
-        if self.is_mode_active(RcModesArray::ALTITUDE_HOLD) {
-            rc_modes.set(RcModesArray::ALTITUDE_HOLD);
+        if self.is_mode_active(RcMode::ALTITUDE_HOLD) {
+            rc_modes.set(RcMode::ALTITUDE_HOLD);
             stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcModesArray::POSITION_HOLD) {
-            rc_modes.set(RcModesArray::POSITION_HOLD);
+        if self.is_mode_active(RcMode::POSITION_HOLD) {
+            rc_modes.set(RcMode::POSITION_HOLD);
             stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcModesArray::MAG) {
-            rc_modes.set(RcModesArray::MAG);
+        if self.is_mode_active(RcMode::MAG) {
+            rc_modes.set(RcMode::MAG);
         }
-        if self.is_mode_active(RcModesArray::HEADFREE) {
-            rc_modes.set(RcModesArray::HEADFREE);
+        if self.is_mode_active(RcMode::HEADFREE) {
+            rc_modes.set(RcMode::HEADFREE);
         }
-        if self.is_mode_active(RcModesArray::CHIRP) {
-            rc_modes.set(RcModesArray::CHIRP);
+        if self.is_mode_active(RcMode::CHIRP) {
+            rc_modes.set(RcMode::CHIRP);
         }
-        if self.is_mode_active(RcModesArray::PASSTHRU) {
-            rc_modes.set(RcModesArray::PASSTHRU);
+        if self.is_mode_active(RcMode::PASSTHRU) {
+            rc_modes.set(RcMode::PASSTHRU);
         }
-        if self.is_mode_active(RcModesArray::FAILSAFE) {
-            rc_modes.set(RcModesArray::FAILSAFE);
+        if self.is_mode_active(RcMode::FAILSAFE) {
+            rc_modes.set(RcMode::FAILSAFE);
             stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
-        if self.is_mode_active(RcModesArray::GPS_RESCUE) {
-            rc_modes.set(RcModesArray::GPS_RESCUE);
+        if self.is_mode_active(RcMode::GPS_RESCUE) {
+            rc_modes.set(RcMode::GPS_RESCUE);
             stabilization_mode = Self::STABILIZATION_MODE_ANGLE;
         }
         (rc_modes, stabilization_mode)
@@ -366,32 +366,19 @@ pub struct RcMode {
     pub name: &'static str,
 }
 
-/// Radio control modes, including armed/disarmed and flight modes.
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct RcModesArray {
-    active_ids: BitSet64,
-}
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RcModesArray {}
-
-impl RcModesArray {
-    /// Constructor.
+impl RcMode {
     #[must_use]
-    pub const fn new() -> Self {
-        Self { active_ids: BitSet64::new() }
+    pub fn find_rc_mode_by_id(id: u8) -> Option<RcMode> {
+        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.id)
     }
-}
-
-impl Default for RcModesArray {
-    fn default() -> Self {
-        Self::new()
+    #[must_use]
+    pub fn find_rc_mode_by_permanent_id(id: u8) -> Option<RcMode> {
+        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.permanent_id)
     }
 }
 
 #[allow(missing_docs)]
-impl RcModesArray {
+impl RcMode {
     pub const MAX_MODES_PER_PAGE: u8 = 32;
     pub const PERMANENT_ID_NONE: u8 = 255;
 
@@ -452,6 +439,7 @@ impl RcModesArray {
     pub const LAP_TIMER_RESET: u8 = 48;
     pub const COUNT: u8 = 49;
 
+    // `permanent_id`s must uniquely identify `RcMode`, DO NOT REUSE THEM!
     pub const RC_MODES: [RcMode; Self::COUNT as usize] = [
         RcMode { id: Self::ARM, permanent_id: 0, name: "ARM" },
         RcMode { id: Self::ANGLE, permanent_id: 1, name: "ANGLE" },
@@ -462,20 +450,20 @@ impl RcModesArray {
         RcMode { id: Self::HEADFREE, permanent_id: 6, name: "HEADFREE" },
         RcMode { id: Self::HEADADJ, permanent_id: 7, name: "HEADADJ" },
         RcMode { id: Self::CAMSTAB, permanent_id: 8, name: "CAMSTAB" },
-        // RcModeName {id: Self::CAM_TRIG,    permanent_id:9,  name:"CAM_TRIG", },
-        // RcModeName {id: Self::GPS_HOME,    permanent_id:10, name:"GPS HOME" },
+        // RcMode { id: Self::CAM_TRIG, permanent_id: 9,  name:"CAM_TRIG", }, // (removed)
+        // RcMode { id: Self::GPS_HOME, permanent_id: 10, name:"GPS HOME" }, // (removed)
         RcMode { id: Self::POSITION_HOLD, permanent_id: 11, name: "POS HOLD" },
         RcMode { id: Self::PASSTHRU, permanent_id: 12, name: "PASSTHRU" },
         RcMode { id: Self::BEEPER_ON, permanent_id: 13, name: "BEEPER" },
-        // RcModeName {id: Self::LEDMAX,     permanent_id:14, name:"LEDMAX" }, (removed)
+        // RcMode { id: Self::LEDMAX, permanent_id:14, name:"LEDMAX" }, // (removed)
         RcMode { id: Self::LED_LOW, permanent_id: 15, name: "LEDLOW" },
-        // RcModeName {id: Self::LLIGHTS,     permanent_id:16, name:"LLIGHTS" }, (removed)
+        // RcMode { id: Self::LLIGHTS, permanent_id:16, name:"LLIGHTS" }, // (removed)
         RcMode { id: Self::CALIBRATE, permanent_id: 17, name: "CALIBRATE" },
-        // RcModeName {id: Self::GOVERNOR,    permanent_id:18, name:"GOVERNOR" }, (removed)
+        // RcMode { id: Self::GOVERNOR, permanent_id: 18, name:"GOVERNOR" }, // (removed)
         RcMode { id: Self::OSD, permanent_id: 19, name: "OSD DISABLE" },
         RcMode { id: Self::TELEMETRY, permanent_id: 20, name: "TELEMETRY" },
-        // RcModeName {id: Self::GTUNE,       permanent_id:21, name:"GTUNE" }, (removed)
-        // RcModeName {id: Self::RANGEFINDER, permanent_id:22, name:"RANGEFINDER" }, (removed)
+        // RcMode { id: Self::GTUNE, permanent_id: 21, name: "GTUNE" }, // (removed)
+        // RcMode { id: Self::RANGEFINDER, permanent_id: 22, name: "RANGEFINDER" }, // (removed)
         RcMode { id: Self::SERVO1, permanent_id: 23, name: "SERVO1" },
         RcMode { id: Self::SERVO2, permanent_id: 24, name: "SERVO2" },
         RcMode { id: Self::SERVO3, permanent_id: 25, name: "SERVO3" },
@@ -491,7 +479,7 @@ impl RcModesArray {
         RcMode { id: Self::CRASH_FLIP, permanent_id: 35, name: "FLIP OVER AFTER CRASH" },
         RcMode { id: Self::PREARM, permanent_id: 36, name: "PREARM" },
         RcMode { id: Self::BEEP_GPS_COUNT, permanent_id: 37, name: "GPS BEEP SATELLITE COUNT" },
-        // RcModeName {id: Self::BOX3D_ON_A_SWITCH,.permanent_id= 38, name:"3D ON A SWITCH", }, (removed)
+        // RcMode { id: Self::BOX3D_ON_A_SWITCH, permanent_id: 38, name: "3D ON A SWITCH", }, // (removed)
         RcMode { id: Self::VTX_PIT_MODE, permanent_id: 39, name: "VTX PIT MODE" },
         RcMode { id: Self::USER1, permanent_id: 40, name: "USER1" }, // may be overridden
         RcMode { id: Self::USER2, permanent_id: 41, name: "USER2" },
@@ -513,17 +501,6 @@ impl RcModesArray {
     ];
 }
 
-impl RcModesArray {
-    #[must_use]
-    pub fn find_rc_mode_by_id(id: u8) -> Option<RcMode> {
-        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.id)
-    }
-    #[must_use]
-    pub fn find_rc_mode_by_permanent_id(id: u8) -> Option<RcMode> {
-        Self::RC_MODES.into_iter().find(|&mode_name| id == mode_name.permanent_id)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -538,7 +515,6 @@ mod tests {
         is_full::<RxChannelRange>();
         is_full::<ModeActivationCondition>();
         is_full::<RcModes>();
-        is_full::<RcModesArray>();
         is_full::<RcMode>();
 
         #[cfg(feature = "serde")]
@@ -547,8 +523,6 @@ mod tests {
         is_config::<ModeActivationCondition>();
         #[cfg(feature = "serde")]
         is_config::<RcModes>();
-        #[cfg(feature = "serde")]
-        is_config::<RcModesArray>();
     }
     #[test]
     fn test_new() {

@@ -40,6 +40,6 @@ pub use rc_adjustments::{
     RcTimedAdjustmentState,
 };
 pub use rc_controls::RcControlsConfig;
-pub use rc_modes::{ModeActivationCondition, RcModes, RcModesArray, RxChannelRange};
+pub use rc_modes::{ModeActivationCondition, RcModes, RcMode, RxChannelRange};
 pub use rx_config::RxConfig;
 pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
