@@ -26,6 +26,7 @@ mod protocols;
 mod rates;
 mod rc_adjustments;
 mod rc_controls;
+mod rc_mode;
 mod rc_modes;
 mod rx_config;
 mod rx_receiver;
@@ -40,6 +41,7 @@ pub use rc_adjustments::{
     RcTimedAdjustmentState,
 };
 pub use rc_controls::RcControlsConfig;
-pub use rc_modes::{ModeActivationCondition, RcModes, RcMode, RxChannelRange};
+pub use rc_mode::RcMode;
+pub use rc_modes::{ModeActivationCondition, RcModes, RxChannelRange};
 pub use rx_config::RxConfig;
 pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};

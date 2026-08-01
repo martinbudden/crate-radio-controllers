@@ -143,7 +143,6 @@ impl CrsfParser {
     }
 
     #[cfg(test)]
-    #[allow(clippy::cast_possible_truncation)]
     fn _pack_crsf_payload(channels: RxChannels) -> CrsfPayload {
         let mut bits: u32 = 0;
         let mut bit_count: u32 = 0;
@@ -153,6 +152,7 @@ impl CrsfParser {
         for &ch in &channels {
             bits |= u32::from(ch) << bit_count;
             bit_count += 11;
+            #[allow(clippy::cast_possible_truncation)]
             while bit_count >= 8 && byte_idx < 22 {
                 bytes[byte_idx] = bits as u8;
                 bits >>= 8;

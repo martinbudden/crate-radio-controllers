@@ -132,8 +132,6 @@ impl RxReceiver for CrsfReceiver {
     }
     //fn update(&mut self) -> Result<Option<Self::Frame>, Error> {}
 
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
     fn channel_pwm(&self, channel_index: u8) -> u16 {
         // conversion from RC value to PWM
         // for FRAMETYPE_RC_CHANNELS_PACKED(0x16)
@@ -150,7 +148,10 @@ impl RxReceiver for CrsfReceiver {
             return RxChannel::LOW;
         }
         let pwm = CHANNEL_SCALE * f32::from(self.channels[channel_index as usize]) + CHANNEL_OFFSET;
-        pwm as u16
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            pwm as u16
+        }
     }
 
     fn on_data_received_from_isr(&mut self, data: u8) -> bool {

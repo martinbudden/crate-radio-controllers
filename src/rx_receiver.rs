@@ -94,10 +94,33 @@ impl RxChannel {
     pub const AUX15: usize = 18;
     pub const AUX16: usize = 19;
 
-    // PWM ranges
+    pub const ROLL_U8: u8 = 0;
+    pub const PITCH_U8: u8 = 1;
+    pub const THROTTLE_U8: u8 = 2;
+    pub const YAW_U8: u8 = 3;
+    pub const AUX1_U8: u8 = 4;
+    pub const AUX2_U8: u8 = 5;
+    pub const AUX3_U8: u8 = 6;
+    pub const AUX4_U8: u8 = 7;
+    pub const AUX5_U8: u8 = 8;
+    pub const AUX6_U8: u8 = 9;
+    pub const AUX7_U8: u8 = 10;
+    pub const AUX8_U8: u8 = 11;
+    pub const AUX9_U8: u8 = 12;
+    pub const AUX10_U8: u8 = 13;
+    pub const AUX11_U8: u8 = 14;
+    pub const AUX12_U8: u8 = 15;
+    pub const AUX13_U8: u8 = 16;
+    pub const AUX14_U8: u8 = 17;
+    pub const AUX15_U8: u8 = 18;
+    pub const AUX16_U8: u8 = 19;
+
+    // PWM values
     pub const LOW: u16 = 1000;
-    pub const HIGH: u16 = 2000;
+    pub const MID_LOW: u16 = 1250;
     pub const MID: u16 = 1500;
+    pub const MID_HIGH: u16 = 1750;
+    pub const HIGH: u16 = 2000;
     pub const RANGE: u16 = Self::HIGH - Self::LOW;
 }
 
@@ -162,10 +185,10 @@ impl RxFrame {
     }
     /// Returns value of auxiliary channel, or `RxChannel::LOW` if channel index invalid.
     #[must_use]
-    pub fn auxiliary_channel(&self, channel_index: u8) -> u16 {
+    pub fn channel(&self, channel_index: u8) -> u16 {
         let index = usize::from(channel_index);
-        if index < Self::MAX_CHANNEL_COUNT && index > RxChannel::AUX1 {
-            return self.channels[channel_index as usize - RxChannel::AUX1];
+        if index < Self::MAX_CHANNEL_COUNT {
+            return self.channels[channel_index as usize];
         }
         RxChannel::LOW
     }
