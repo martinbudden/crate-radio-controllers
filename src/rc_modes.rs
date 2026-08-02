@@ -172,11 +172,7 @@ impl PostcardValue<'_> for RcModes {}
 impl RcModes {
     pub const MAX_MODE_ACTIVATION_CONDITION_COUNT: usize = 20;
 
-    pub const FLIGHT_STABILIZATION_MODE_RATE: u8 = 0; // aka acro mode
-    pub const FLIGHT_STABILIZATION_MODE_ANGLE: u8 = 1;
-    pub const FLIGHT_STABILIZATION_MODE_HORIZON: u8 = 2;
-    pub const FLIGHT_STABILIZATION_MODE_LEVEL_RACE: u8 = 3;
-
+    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -189,16 +185,17 @@ impl RcModes {
             macs: [ModeActivationCondition::new(); Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
         }
     }
+
+    /// Constructor with a single MAC for ARM mode on AUX1.
     #[must_use]
     pub fn with_mac_arm() -> Self {
-        let mac_arm = ModeActivationCondition::from_range_mode_channel(
+        let mut macs = [ModeActivationCondition::new(); Self::MAX_MODE_ACTIVATION_CONDITION_COUNT];
+        macs[0] = ModeActivationCondition::from_range_mode_channel(
             RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
             RcMode::ARM,
             RxChannel::AUX1_U8,
         );
-        let mut macs = [ModeActivationCondition::new(); Self::MAX_MODE_ACTIVATION_CONDITION_COUNT];
-        macs[0] = mac_arm;
-        Self {
+        let mut this = RcModes {
             active_mac_count: 0,
             linked_mac_count: 0,
             active_modes: BitSet64::new(),
@@ -206,7 +203,62 @@ impl RcModes {
             active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
             linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
             macs,
-        }
+        };
+        this.analyze_macs();
+        this
+    }
+
+    /// Constructor with a set of conventional MACs for common modes:
+    /// - `ARM` on `AUX1`
+    /// - `HORIZON` on `AUX2` mid-low to mid-high
+    /// - `ANGLE` on `AUX2` mid-high to high
+    /// - `BEEPER_ON` on `AUX3`
+    /// - `CRASH_FLIP` on `AUX4`
+    /// - `GPS_RESCUE` on `AUX5`
+    #[must_use]
+    pub fn with_macs_conventional() -> Self {
+        let mut macs = [ModeActivationCondition::new(); Self::MAX_MODE_ACTIVATION_CONDITION_COUNT];
+        macs[0] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
+            RcMode::ARM,
+            RxChannel::AUX1_U8,
+        );
+        macs[1] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID_LOW, RxChannel::MID_HIGH),
+            RcMode::HORIZON,
+            RxChannel::AUX2_U8,
+        );
+        macs[2] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID_HIGH, RxChannel::HIGH),
+            RcMode::ANGLE,
+            RxChannel::AUX2_U8,
+        );
+        macs[3] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
+            RcMode::BEEPER_ON,
+            RxChannel::AUX3_U8,
+        );
+        macs[4] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
+            RcMode::CRASH_FLIP,
+            RxChannel::AUX4_U8,
+        );
+        macs[5] = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
+            RcMode::GPS_RESCUE,
+            RxChannel::AUX5_U8,
+        );
+        let mut this = RcModes {
+            active_mac_count: 0,
+            linked_mac_count: 0,
+            active_modes: BitSet64::new(),
+            sticky_modes_was_ever_disabled: BitSet64::new(),
+            active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+            linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+            macs,
+        };
+        this.analyze_macs();
+        this
     }
 }
 
@@ -242,27 +294,25 @@ impl RcModes {
         self.active_modes.test(rc_mode)
     }
 
-    fn is_mac_configured(mac: ModeActivationCondition, empty_mac: ModeActivationCondition) -> bool {
-        if mac == empty_mac {
-            return true;
-        }
-        false
+    #[inline]
+    fn is_mac_configured(mac: ModeActivationCondition) -> bool {
+        const EMPTY_MAC: ModeActivationCondition = ModeActivationCondition::new();
+        mac != EMPTY_MAC
     }
 
-    /// Build the list of used mac indices
+    /// Build the list of used mac indices.
     /// We can then use this to speed up processing by only evaluating used conditions.
+    /// Must be called before `update_activated_modes` is called.
     pub fn analyze_macs(&mut self) {
-        let empty_mac = ModeActivationCondition::default();
-
         self.active_mac_count = 0;
         self.linked_mac_count = 0;
 
-        #[allow(clippy::cast_possible_truncation)]
         for (ii, mac) in self.macs.into_iter().enumerate() {
+            #[allow(clippy::cast_possible_truncation)]
             if mac.linked_to != 0 {
                 self.linked_macs[self.linked_mac_count] = ii as u8;
                 self.linked_mac_count += 1;
-            } else if Self::is_mac_configured(mac, empty_mac) {
+            } else if Self::is_mac_configured(mac) {
                 self.active_macs[self.active_mac_count] = ii as u8;
                 self.active_mac_count += 1;
             }
@@ -283,21 +333,19 @@ impl RcModes {
         mac: ModeActivationCondition,
         and_bitset: &mut BitSet64,
         new_bitset: &mut BitSet64,
-        range_active: bool,
+        range_is_active: bool,
     ) {
         if and_bitset.test(mac.mode_id) || !new_bitset.test(mac.mode_id) {
-            let b_and: bool = mac.mode_logic == Self::LOGIC_AND;
-            #[allow(clippy::if_not_else)] // TODO: sort this if logic
-            if !b_and {
-                // OR mode_activation_condition
-                if range_active {
-                    and_bitset.reset(mac.mode_id);
+            if mac.mode_logic == Self::LOGIC_AND {
+                // AND mode_activation_condition
+                and_bitset.set(mac.mode_id);
+                if !range_is_active {
                     new_bitset.set(mac.mode_id);
                 }
             } else {
-                // AND mode_activation_condition
-                and_bitset.set(mac.mode_id);
-                if !range_active {
+                // OR mode_activation_condition
+                if range_is_active {
+                    and_bitset.reset(mac.mode_id);
                     new_bitset.set(mac.mode_id);
                 }
             }
@@ -305,114 +353,59 @@ impl RcModes {
     }
 
     fn update_masks_for_sticky_modes(
-        &mut self,
+        active_modes: BitSet64,
+        sticky_modes_was_ever_disabled: &mut BitSet64,
         mac: ModeActivationCondition,
         and_bitset: &mut BitSet64,
         new_bitset: &mut BitSet64,
         range_active: bool,
     ) {
         const STICKY_MODE_BOOT_DELAY_US: u32 = 5_000_000; // 5 seconds
-        if self.is_mode_active(mac.mode_id) {
+        if active_modes.test(mac.mode_id) {
             and_bitset.reset(mac.mode_id);
             new_bitset.set(mac.mode_id);
-        } else if self.sticky_modes_was_ever_disabled.test(mac.mode_id) {
+        } else if sticky_modes_was_ever_disabled.test(mac.mode_id) {
             Self::update_masks_for_mac(mac, and_bitset, new_bitset, range_active);
         } else {
             let time_us: u32 = 4;
             if time_us >= STICKY_MODE_BOOT_DELAY_US && !range_active {
-                self.sticky_modes_was_ever_disabled.set(mac.mode_id);
+                sticky_modes_was_ever_disabled.set(mac.mode_id);
             }
         }
     }
 
+    /// Updates the activated modes using the `RxFrame` values and the mode activation conditions.
+    /// `analyze_macs` must have been called before this function is called.
     pub fn update_activated_modes(&mut self, rx_frame: &RxFrame) {
         let mut new_bitset = BitSet64::default();
         let mut and_bitset = BitSet64::default();
         let mut sticky_modes = BitSet64::default();
         sticky_modes.set(RcMode::PARALYZE);
 
-        // TODO: use enumerate in for
-        // determine which conditions set/clear the mode
-        let mut ii: usize = 0;
-        for mac in self.macs {
+        // Determine which conditions set/clear the mode.
+        for mac in &self.macs[..self.active_mac_count] {
             if sticky_modes.test(mac.mode_id) {
-                let range_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
-                self.update_masks_for_sticky_modes(mac, &mut and_bitset, &mut new_bitset, range_active);
+                let range_is_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
+                Self::update_masks_for_sticky_modes(
+                    self.active_modes,
+                    &mut self.sticky_modes_was_ever_disabled,
+                    *mac,
+                    &mut and_bitset,
+                    &mut new_bitset,
+                    range_is_active,
+                );
             } else if mac.mode_id < RcMode::COUNT {
-                let range_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
-                Self::update_masks_for_mac(mac, &mut and_bitset, &mut new_bitset, range_active);
-            }
-            ii += 1;
-            if ii == self.active_mac_count {
-                break;
+                let range_is_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
+                Self::update_masks_for_mac(*mac, &mut and_bitset, &mut new_bitset, range_is_active);
             }
         }
-
         // Update linked modes
-        ii = 0;
-        for mac in self.macs {
-            let range_active = and_bitset.test(mac.linked_to) != new_bitset.test(mac.linked_to);
-            Self::update_masks_for_mac(mac, &mut and_bitset, &mut new_bitset, range_active);
-            ii += 1;
-            if ii == self.linked_mac_count {
-                break;
-            }
+        for mac in &self.macs[..self.linked_mac_count] {
+            let range_is_active = and_bitset.test(mac.linked_to) != new_bitset.test(mac.linked_to);
+            Self::update_masks_for_mac(*mac, &mut and_bitset, &mut new_bitset, range_is_active);
         }
 
         self.active_modes = new_bitset ^ and_bitset;
-    }
-
-    #[must_use]
-    pub fn update_modes(&self) -> (BitSet64, u8) {
-        let mut rc_modes = BitSet64::default();
-        let mut flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_RATE;
-
-        if self.is_mode_active(RcMode::ANGLE) {
-            rc_modes.set(RcMode::ANGLE);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-        if self.is_mode_active(RcMode::HORIZON) {
-            rc_modes.set(RcMode::HORIZON);
-            // we don't support horizon mode, instead we use the horizon mode setting to invoke level race mode
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_LEVEL_RACE;
-        }
-        if self.is_mode_active(RcMode::ALTITUDE_HOLD) {
-            rc_modes.set(RcMode::ALTITUDE_HOLD);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-        if self.is_mode_active(RcMode::POSITION_HOLD) {
-            rc_modes.set(RcMode::POSITION_HOLD);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-        if self.is_mode_active(RcMode::FAILSAFE) {
-            rc_modes.set(RcMode::FAILSAFE);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-        if self.is_mode_active(RcMode::GPS_RESCUE) {
-            rc_modes.set(RcMode::GPS_RESCUE);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-        if self.is_mode_active(RcMode::AUTOPILOT) {
-            rc_modes.set(RcMode::AUTOPILOT);
-            flight_stabilization_mode = Self::FLIGHT_STABILIZATION_MODE_ANGLE;
-        }
-
-        if self.is_mode_active(RcMode::ARM) {
-            rc_modes.set(RcMode::ARM);
-        }
-        if self.is_mode_active(RcMode::MAG) {
-            rc_modes.set(RcMode::MAG);
-        }
-        if self.is_mode_active(RcMode::HEADFREE) {
-            rc_modes.set(RcMode::HEADFREE);
-        }
-        if self.is_mode_active(RcMode::CHIRP) {
-            rc_modes.set(RcMode::CHIRP);
-        }
-        if self.is_mode_active(RcMode::PASSTHRU) {
-            rc_modes.set(RcMode::PASSTHRU);
-        }
-        (rc_modes, flight_stabilization_mode)
     }
 }
 
@@ -462,6 +455,7 @@ mod tests {
             RxChannel::AUX2_U8,
         );
         rc_modes.set_mac(1, mac_angle);
+        rc_modes.analyze_macs();
 
         let mut rx_frame = RxFrame::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;
@@ -478,13 +472,6 @@ mod tests {
         assert!(rc_modes.is_mode_active(RcMode::ARM));
         assert!(rc_modes.is_mode_active(RcMode::ANGLE));
         assert!(!rc_modes.is_mode_active(RcMode::ALTITUDE_HOLD));
-
-        let (rc_modes_bitset, flight_stabilization_mode) = rc_modes.update_modes();
-        assert!(rc_modes_bitset.test(RcMode::ARM));
-        assert!(rc_modes_bitset.test(RcMode::ANGLE));
-        assert!(!rc_modes_bitset.test(RcMode::ALTITUDE_HOLD));
-
-        assert_eq!(RcModes::FLIGHT_STABILIZATION_MODE_ANGLE, flight_stabilization_mode);
     }
 
     #[test]
@@ -497,6 +484,7 @@ mod tests {
             RxChannel::AUX2_U8,
         );
         rc_modes.set_mac(1, mac_angle);
+        rc_modes.analyze_macs();
 
         let mut rx_frame = RxFrame::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;

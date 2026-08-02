@@ -116,11 +116,14 @@ impl RxChannel {
     pub const AUX16_U8: u8 = 19;
 
     // PWM values
+    // Normal range is [1000,2000]
+    pub const MIN: u16 = 900;
     pub const LOW: u16 = 1000;
     pub const MID_LOW: u16 = 1250;
     pub const MID: u16 = 1500;
     pub const MID_HIGH: u16 = 1750;
     pub const HIGH: u16 = 2000;
+    pub const MAX: u16 = 2100;
     pub const RANGE: u16 = Self::HIGH - Self::LOW;
 }
 
@@ -142,9 +145,9 @@ impl RxFrame {
     pub const fn new() -> Self {
         Self {
             channels: [
+                RxChannel::MID, // Sticks default to MID.
                 RxChannel::MID,
-                RxChannel::MID,
-                RxChannel::LOW,
+                RxChannel::LOW, // Throttle defaults to LOW.
                 RxChannel::MID,
                 RxChannel::LOW,
                 RxChannel::LOW,
@@ -176,7 +179,7 @@ impl RxFrame {
     // IBUS has 14 channels
     // CRSF has 16 channels
     pub const MAX_CHANNEL_COUNT: usize = 16;
-    pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW; // center
+    pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
 
     /// Returns true if the frame is safe to use for flight control.
     #[must_use]
