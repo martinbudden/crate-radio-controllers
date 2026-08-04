@@ -9,26 +9,25 @@ that is each release may contain incompatible API changes.
 
 Once the API has stabilized this project will adopt semantic versioning, the first release to do so will be `0.2.0`.
 
-## [Unreleased]
+## [0.1.6] - 2026-08-04
 
 ### Added
 
 - `#[must_use]` attribute to selected functions.
+- Mode Activation Condition code and tests.
 
 ### Changed
 
-- updated to `simple-bitset` version 0.1.2.
+- updated to `simple-bitset` version 0.1.5.
 - `new` functions to `const` where possible.
+- updated documentation.
+- subsumed `RcModesArray` into `RcMode`.
+- tidied `RcModes`.
 
 ### Removed
 
 - `allow`s from `lib.rs`.
-
-### Deprecated
-
-### Fixed
-
-### Security
+- `RcModesArray`.
 
 ## [0.1.5] - 2026-05-23
 
