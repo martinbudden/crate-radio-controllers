@@ -116,7 +116,7 @@ impl RxChannel {
     pub const AUX16_U8: u8 = 19;
 
     // PWM values
-    // Normal range is [1000,2000]
+    // Normal range is [1000, 2000]
     pub const MIN: u16 = 900;
     pub const LOW: u16 = 1000;
     pub const MID_LOW: u16 = 1250;
@@ -125,6 +125,29 @@ impl RxChannel {
     pub const HIGH: u16 = 2000;
     pub const MAX: u16 = 2100;
     pub const RANGE: u16 = Self::HIGH - Self::LOW;
+
+    pub const MIN_F32:f32 = 900.0;
+    pub const LOW_F32:f32 = 1000.0;
+    pub const MID_LOW_F32:f32 = 1250.0;
+    pub const MID_F32:f32 = 1500.0;
+    pub const MID_HIGH_F32:f32 = 1750.0;
+    pub const HIGH_F32:f32 = 2000.0;
+    pub const MAX_F32:f32 = 2100.0;
+    pub const RANGE_F32: f32 = 1000.0;
+    pub const HALF_RANGE_F32: f32 = 500.0;
+}
+
+impl RxChannel {
+    /// Maps [1000, 2000] to [-1000, 1000].
+    #[must_use]
+    pub fn map_rpy_pwm_to_plus_minus_1000(pwm: u16) -> i32 {
+        i32::from(pwm) * 2 - 3000
+    }
+    /// Maps [1000, 2000] to [0, 1000].
+    #[must_use]
+    pub fn map_throttle_pwm_to_0_to_1000(pwm: u16) -> i32 {
+        i32::from(pwm) - 1000
+    }
 }
 
 /// Array of RX channels.
@@ -228,5 +251,21 @@ mod tests {
     fn test_new() {
         let receiver = RxReceiverCommon::new();
         assert!(!receiver.packet_received);
+    }
+    #[test]
+    fn map_rpy_pwm_to_plus_minus_1000() {
+        assert_eq!(-1000, RxChannel::map_rpy_pwm_to_plus_minus_1000(1000));
+        assert_eq!(-500, RxChannel::map_rpy_pwm_to_plus_minus_1000(1250));
+        assert_eq!(0, RxChannel::map_rpy_pwm_to_plus_minus_1000(1500));
+        assert_eq!(500, RxChannel::map_rpy_pwm_to_plus_minus_1000(1750));
+        assert_eq!(1000, RxChannel::map_rpy_pwm_to_plus_minus_1000(2000));
+    }
+    #[test]
+    fn map_throttle_pwm_to_0_to_1000() {
+        assert_eq!(0, RxChannel::map_throttle_pwm_to_0_to_1000(1000));
+        assert_eq!(250, RxChannel::map_throttle_pwm_to_0_to_1000(1250));
+        assert_eq!(500, RxChannel::map_throttle_pwm_to_0_to_1000(1500));
+        assert_eq!(750, RxChannel::map_throttle_pwm_to_0_to_1000(1750));
+        assert_eq!(1000, RxChannel::map_throttle_pwm_to_0_to_1000(2000));
     }
 }

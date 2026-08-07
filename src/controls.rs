@@ -13,10 +13,10 @@ impl From<RxFrame> for RcSticks {
     fn from(frame: RxFrame) -> Self {
         // Map channels in range [1000,2000] to floats in range [0,1] for throttle, [-1,1] for roll, pitch yaw
         RcSticks {
-            roll: (f32::from(frame.channels[RxChannel::ROLL] - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            pitch: (f32::from(frame.channels[RxChannel::PITCH] - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            yaw: (f32::from(frame.channels[RxChannel::YAW] - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            throttle: (f32::from(frame.channels[RxChannel::THROTTLE] - RxChannel::RANGE) / f32::from(RxChannel::RANGE)),
+            roll: (f32::from(frame.channels[RxChannel::ROLL]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            pitch: (f32::from(frame.channels[RxChannel::PITCH]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            yaw: (f32::from(frame.channels[RxChannel::YAW]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            throttle: (f32::from(frame.channels[RxChannel::THROTTLE]) - RxChannel::LOW_F32) / RxChannel::RANGE_F32,
         }
     }
 }
@@ -25,10 +25,10 @@ impl From<RxControlsPwm> for RcSticks {
     fn from(controls_pwm: RxControlsPwm) -> Self {
         // Map channels in range [1000,2000] to floats in range [0,1] for throttle, [-1,1] for roll, pitch yaw
         RcSticks {
-            roll: (f32::from(controls_pwm.roll - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            pitch: (f32::from(controls_pwm.pitch - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            yaw: (f32::from(controls_pwm.yaw - RxChannel::MID) / f32::from(RxChannel::RANGE)),
-            throttle: (f32::from(controls_pwm.throttle - RxChannel::RANGE) / f32::from(RxChannel::RANGE)),
+            roll: (f32::from(controls_pwm.roll) - RxChannel::MID_F32 / RxChannel::HALF_RANGE_F32),
+            pitch: (f32::from(controls_pwm.pitch) - RxChannel::MID_F32 / RxChannel::HALF_RANGE_F32),
+            yaw: (f32::from(controls_pwm.yaw) - RxChannel::MID_F32 / RxChannel::HALF_RANGE_F32),
+            throttle: (f32::from(controls_pwm.throttle) - RxChannel::LOW_F32 / RxChannel::RANGE_F32),
         }
     }
 }
@@ -102,5 +102,27 @@ mod tests {
     fn new() {
         let controls = RcSticks::new();
         assert_eq!(0.0, controls.throttle);
+    }
+    #[test]
+    fn from_rx_frame() {
+        let mut rx_frame = RxFrame::new();
+        rx_frame.channels[RxChannel::ROLL] = 1250;
+        rx_frame.channels[RxChannel::PITCH] = 1500;
+        rx_frame.channels[RxChannel::YAW] = 1750;
+        rx_frame.channels[RxChannel::THROTTLE] = 1000;
+
+        // maps [1000, 2000] to [-1.0, 1.0] for roll, pitch, yaw, [0.0, 1.0] for throttle
+        let rc_sticks = RcSticks::from(rx_frame);
+        assert_eq!(-0.5, rc_sticks.roll);
+        assert_eq!(0.0, rc_sticks.pitch);
+        assert_eq!(0.5, rc_sticks.yaw);
+        assert_eq!(0.0, rc_sticks.throttle);
+
+        rx_frame.channels[RxChannel::THROTTLE] = 1250;
+        let rc_sticks = RcSticks::from(rx_frame);
+        assert_eq!(0.25, rc_sticks.throttle);
+        rx_frame.channels[RxChannel::THROTTLE] = 1750;
+        let rc_sticks = RcSticks::from(rx_frame);
+        assert_eq!(0.75, rc_sticks.throttle);
     }
 }
