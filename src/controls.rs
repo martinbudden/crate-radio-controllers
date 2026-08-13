@@ -70,7 +70,7 @@ impl RxControlsPwm {
 }
 
 impl RxControlsPwm {
-    // course gained values of pwm. Can be used to allow the receiver act like cursor keys to navigate a menu system
+    // course gained values of pwm. Can be used to allow the radio act like cursor keys to navigate a menu system
     #[must_use]
     pub fn pwm_is_high(pwm: u16) -> bool {
         pwm >= 1750

@@ -4,10 +4,32 @@ use {
     serde::{Deserialize, Serialize},
 };
 
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum RadioType {
+    #[default]
+    Crsf,
+    Ibus,
+    Mock,
+}
+
+impl RadioType {
+    pub const COUNT: u8 = 3;
+
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            1 => Self::Ibus,
+            2 => Self::Mock,
+            _ => Self::default(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RxConfig {
-    pub serial_rx_provider: u8,
+    pub serial_rx_provider: RadioType,
     pub serial_rx_inverted: u8, // invert the serial RX protocol compared to its default setting.
     pub half_duplex: u8,        // allow rx to operate in half duplex mode on STM32 F4, ignored for F1 and F3.
     pub rssi_channel: u8,
@@ -16,7 +38,7 @@ pub struct RxConfig {
     pub rssi_offset: i8,                 // offset applied to the RSSI value
     pub fpv_cam_angle_degrees: u8,       // Camera angle to be scaled into rc commands
     pub air_mode_activate_threshold: u8, // Throttle setpoint percent where airmode gets activated
-    pub spektrum_sat_bind: u8,           // number of bind pulses for Spektrum satellite receivers
+    pub spektrum_sat_bind: u8,           // number of bind pulses for Spektrum satellite radios
     pub mid_rc: u16, // Some radios don't have a neutral point centered on 1500. This can be changed here.
     pub min_check: u16, // minimum rc
     pub max_check: u16, // maximum rc
@@ -32,7 +54,7 @@ impl RxConfig {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            serial_rx_provider: 0,
+            serial_rx_provider: RadioType::Crsf,
             serial_rx_inverted: 0,
             half_duplex: 0,
             rssi_channel: 0,
@@ -75,6 +97,6 @@ mod tests {
     #[test]
     fn test_new() {
         let config = RxConfig::new();
-        assert_eq!(0, config.serial_rx_provider);
+        assert_eq!(RadioType::Crsf, config.serial_rx_provider);
     }
 }

@@ -1,18 +1,58 @@
-use crate::protocols::crsf::CrsfParser;
-use crate::protocols::receiver_serial::ReceiverSerial;
-use crate::{RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
+use crate::{
+    RxChannel, RxFrame, RxLinkStatus, RxRadioCommon,
+    protocols::{RxProtocol, crsf::CrsfParser, serial_radio::RadioSerial},
+    rx_radio::RxRadio,
+};
 
 /*pub struct CrsfReceiverXXXX<UART> {
     //shared: SerialReceiver<UART>,
     // CRSF specific data
 }*/
 
-/// Crossfire receiver<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CrsfReceiver {
-    common: RxReceiverCommon,
-    serial: ReceiverSerial,
-    channels: [u16; CrsfFrame::CHANNEL_COUNT],
+pub struct CrsfFrame {
+    pub channels: [u16; Self::CHANNEL_COUNT],
+    pub failsafe: bool,
+    pub frame_lost: bool,
+    pub rssi: u8,
+}
+
+impl Default for CrsfFrame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl CrsfFrame {
+    const CHANNEL_COUNT: usize = 16;
+    pub const fn new() -> Self {
+        Self { channels: [0u16; Self::CHANNEL_COUNT], failsafe: false, frame_lost: false, rssi: 0 }
+    }
+}
+
+impl From<CrsfFrame> for RxFrame {
+    fn from(frame: CrsfFrame) -> Self {
+        let status = if frame.failsafe {
+            RxLinkStatus::Failsafe
+        } else if frame.frame_lost {
+            RxLinkStatus::NoSignal
+        } else {
+            RxLinkStatus::Ok
+        };
+
+        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
+        channels[..frame.channels.len()].copy_from_slice(&frame.channels);
+
+        Self { channels, status, rssi: frame.rssi }
+    }
+}
+
+/// Crossfire radio<br><br>
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CrsfRadio {
+    common: RxRadioCommon,
+    serial: RadioSerial,
+    frame: CrsfFrame,
     packet_size: usize,
     packet_type: u8,
     // packet is composed as follows
@@ -25,14 +65,14 @@ pub struct CrsfReceiver {
     packet: [u8; Self::MAX_PACKET_SIZE],     // copy of packet used outside of ISR
 }
 
-impl Default for CrsfReceiver {
+impl Default for CrsfRadio {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[allow(missing_docs)]
-impl CrsfReceiver {
+impl CrsfRadio {
     // 8N1
     const _DATA_BITS: u8 = 8;
     //const PARITY:u8 = SerialPort::PARITY_NONE;
@@ -40,10 +80,10 @@ impl CrsfReceiver {
     const _BAUD_RATE: u32 = 416_666;
     const _BAUD_RATE_UNOFFICIAL: u32 = 420_000;
 
-    const TIME_NEEDED_PER_FRAME_US: u32 = 1750;
+    pub const TIME_NEEDED_PER_FRAME_US: u32 = 1750;
 
-    const CRSF_SYNC_BYTE: u8 = 0xC8;
-    const EDGE_TX_SYNC_BYTE: u8 = 0xEE;
+    pub const CRSF_SYNC_BYTE: u8 = 0xC8;
+    pub const EDGE_TX_SYNC_BYTE: u8 = 0xEE;
 
     const _ADDRESS_BROADCAST: u8 = 0x00;
     const _ADDRESS_USB: u8 = 0x10;
@@ -67,14 +107,14 @@ impl CrsfReceiver {
     const MAX_PACKET_SIZE: usize = CrsfParser::MAX_PACKET_SIZE;
 }
 
-impl CrsfReceiver {
+impl CrsfRadio {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            common: RxReceiverCommon::new(),
-            serial: ReceiverSerial::new(),
-            channels: [0u16; CrsfFrame::CHANNEL_COUNT],
+            common: RxRadioCommon::new(),
+            serial: RadioSerial::new(),
+            frame: CrsfFrame::new(),
             packet_size: 0,
             packet_type: 0,
             packet_isr: [0u8; Self::MAX_PACKET_SIZE],
@@ -83,50 +123,17 @@ impl CrsfReceiver {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CrsfFrame {
-    pub channels: [u16; Self::CHANNEL_COUNT],
-    pub failsafe: bool,
-    pub frame_lost: bool,
-    pub rssi: u8,
-}
-
-impl CrsfFrame {
-    const CHANNEL_COUNT: usize = 16;
-    pub const fn new() -> Self {
-        Self { channels: [0u16; Self::CHANNEL_COUNT], failsafe: false, frame_lost: false, rssi: 0 }
+impl RxRadio for CrsfRadio {
+    fn rx_frame(&self) -> RxFrame {
+        RxFrame::default()
     }
 }
 
-impl Default for CrsfFrame {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl From<CrsfFrame> for RxFrame {
-    fn from(frame: CrsfFrame) -> Self {
-        let status = if frame.failsafe {
-            RxLinkStatus::Failsafe
-        } else if frame.frame_lost {
-            RxLinkStatus::NoSignal
-        } else {
-            RxLinkStatus::Ok
-        };
-
-        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
-        channels[..frame.channels.len()].copy_from_slice(&frame.channels);
-
-        Self { channels, status, rssi: frame.rssi }
-    }
-}
-
-impl RxReceiver for CrsfReceiver {
-    type Frame = CrsfFrame;
-
+impl RxProtocol for CrsfRadio {
     fn is_data_available(&self) -> bool {
         false
     }
+
     fn read_byte(&mut self) -> u8 {
         0
     }
@@ -147,7 +154,7 @@ impl RxReceiver for CrsfReceiver {
         if channel_index as usize >= CrsfFrame::CHANNEL_COUNT {
             return RxChannel::LOW;
         }
-        let pwm = CHANNEL_SCALE * f32::from(self.channels[channel_index as usize]) + CHANNEL_OFFSET;
+        let pwm = CHANNEL_SCALE * f32::from(self.frame.channels[channel_index as usize]) + CHANNEL_OFFSET;
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         {
             pwm as u16
@@ -156,14 +163,14 @@ impl RxReceiver for CrsfReceiver {
 
     fn on_data_received_from_isr(&mut self, data: u8) -> bool {
         let time_now_us: u32 = 0; //time_us();
-        if time_now_us > self.serial.start_time + Self::TIME_NEEDED_PER_FRAME_US {
+        if time_now_us > self.serial.start_time + CrsfRadio::TIME_NEEDED_PER_FRAME_US {
             self.serial.packet_index = 0;
             self.common.dropped_packet_count += 1;
         }
 
         match self.serial.packet_index {
             0 => {
-                if data != CrsfReceiver::CRSF_SYNC_BYTE && data != CrsfReceiver::EDGE_TX_SYNC_BYTE {
+                if data != CrsfRadio::CRSF_SYNC_BYTE && data != CrsfRadio::EDGE_TX_SYNC_BYTE {
                     self.serial.packet_is_empty = true;
                     return false;
                 }
@@ -203,12 +210,12 @@ mod tests {
 
     #[test]
     fn normal_types() {
-        is_full::<CrsfReceiver>();
+        is_full::<CrsfRadio>();
         is_full::<CrsfFrame>();
     }
     #[test]
     fn new() {
-        let _receiver = CrsfReceiver::new();
-        //assert!(receiver.is_data_available());
+        let _radio = CrsfRadio::new();
+        //assert!(radio.is_data_available());
     }
 }

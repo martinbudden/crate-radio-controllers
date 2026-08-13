@@ -29,9 +29,9 @@ mod rc_controls;
 mod rc_mode;
 mod rc_modes;
 mod rx_config;
-mod rx_receiver;
+mod rx_radio;
 
-pub use crate::protocols::receiver_crsf::CrsfReceiver;
+pub use crate::protocols::{CrsfRadio, IbusRadio, MockRadio};
 pub use controls::{RcSticks, RxControlsPwm};
 pub use failsafe::FailsafeConfig;
 pub use mock_uart::MockUart;
@@ -43,5 +43,5 @@ pub use rc_adjustments::{
 pub use rc_controls::RcControlsConfig;
 pub use rc_mode::RcMode;
 pub use rc_modes::{ModeActivationCondition, RcModes, RxChannelRange};
-pub use rx_config::RxConfig;
-pub use rx_receiver::{Eui48, RxChannel, RxFrame, RxLinkStatus, RxReceiver, RxReceiverCommon};
+pub use rx_config::{RadioType, RxConfig};
+pub use rx_radio::{Eui48, Radio, RxChannel, RxFrame, RxLinkStatus, RxRadio, RxRadioCommon};

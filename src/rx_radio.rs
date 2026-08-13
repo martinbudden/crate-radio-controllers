@@ -1,3 +1,5 @@
+use crate::{CrsfRadio, MockRadio, RadioType, protocols::IbusRadio};
+
 /// 48-bit extended unique identifier (often synonymous with MAC address).<br><br>
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Eui48 {
@@ -12,9 +14,9 @@ impl Eui48 {
     }
 }
 
-/// Properties common to all RX receivers.
+/// Properties common to all RX radios.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RxReceiverCommon {
+pub struct RxRadioCommon {
     pub packet_received: bool, // may be invalid packet
     pub new_packet_available: bool,
     pub positive_half_throttle: bool,
@@ -25,14 +27,14 @@ pub struct RxReceiverCommon {
     pub tick_count_delta: i32,
 }
 
-impl Default for RxReceiverCommon {
+impl Default for RxRadioCommon {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RxReceiverCommon {
-    // standardize receivers to use AETR (Ailerons, Elevator, Throttle, Rudder), ie ROLL, PITCH, THROTTLE, YAW
+impl RxRadioCommon {
+    // standardize radios to use AETR (Ailerons, Elevator, Throttle, Rudder), ie ROLL, PITCH, THROTTLE, YAW
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
@@ -126,13 +128,13 @@ impl RxChannel {
     pub const MAX: u16 = 2100;
     pub const RANGE: u16 = Self::HIGH - Self::LOW;
 
-    pub const MIN_F32:f32 = 900.0;
-    pub const LOW_F32:f32 = 1000.0;
-    pub const MID_LOW_F32:f32 = 1250.0;
-    pub const MID_F32:f32 = 1500.0;
-    pub const MID_HIGH_F32:f32 = 1750.0;
-    pub const HIGH_F32:f32 = 2000.0;
-    pub const MAX_F32:f32 = 2100.0;
+    pub const MIN_F32: f32 = 900.0;
+    pub const LOW_F32: f32 = 1000.0;
+    pub const MID_LOW_F32: f32 = 1250.0;
+    pub const MID_F32: f32 = 1500.0;
+    pub const MID_HIGH_F32: f32 = 1750.0;
+    pub const HIGH_F32: f32 = 2000.0;
+    pub const MAX_F32: f32 = 2100.0;
     pub const RANGE_F32: f32 = 1000.0;
     pub const HALF_RANGE_F32: f32 = 500.0;
 }
@@ -220,19 +222,37 @@ impl RxFrame {
     }
 }
 
-/// The common interface for all RC protocols.
-pub trait RxReceiver {
-    /// Associated type for the frame/data format.
-    type Frame: Into<RxFrame>; // Every Frame must be convertible to RcFrame
+/// The common interface for all RC radios.
+/// Note: this is not called (say) `RxReceiver` to avoid possible confusion with Embassy `Watch` `Receiver`.
+pub trait RxRadio {
+    fn rx_frame(&self) -> RxFrame;
+}
 
-    //fn update(&mut self) -> Result<Option<Self::Frame>, Error>;
-    //fn update(&mut self, tick_count_delta: u32);
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Radio {
+    Mock(MockRadio),
+    Crsf(CrsfRadio),
+    Ibus(IbusRadio),
+}
 
-    fn is_data_available(&self) -> bool;
-    fn on_data_received_from_isr(&mut self, data: u8) -> bool;
-    fn read_byte(&mut self) -> u8;
-
-    fn channel_pwm(&self, channel_index: u8) -> u16;
+impl Radio {
+    #[must_use]
+    pub const fn new(radio_type: RadioType) -> Radio {
+        match radio_type {
+            RadioType::Mock => Self::Mock(MockRadio::new()),
+            RadioType::Crsf => Self::Crsf(CrsfRadio::new()),
+            RadioType::Ibus => Self::Ibus(IbusRadio::new()),
+        }
+    }
+}
+impl RxRadio for Radio {
+    fn rx_frame(&self) -> RxFrame {
+        match self {
+            Self::Mock(radio) => radio.rx_frame(),
+            Self::Crsf(radio) => radio.rx_frame(),
+            Self::Ibus(radio) => radio.rx_frame(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -245,12 +265,12 @@ mod tests {
     #[test]
     fn normal_types() {
         is_full::<Eui48>();
-        is_full::<RxReceiverCommon>();
+        is_full::<RxRadioCommon>();
     }
     #[test]
     fn test_new() {
-        let receiver = RxReceiverCommon::new();
-        assert!(!receiver.packet_received);
+        let radio = RxRadioCommon::new();
+        assert!(!radio.packet_received);
     }
     #[test]
     fn map_rpy_pwm_to_plus_minus_1000() {

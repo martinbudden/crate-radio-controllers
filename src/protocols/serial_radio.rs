@@ -1,5 +1,5 @@
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ReceiverSerial {
+pub struct RadioSerial {
     //serial_port,
     //serial_port_watcher:,
     pub packet_is_empty: bool,
@@ -9,13 +9,13 @@ pub struct ReceiverSerial {
     pub start_time: u32,
 }
 
-impl Default for ReceiverSerial {
+impl Default for RadioSerial {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ReceiverSerial {
+impl RadioSerial {
     pub const fn new() -> Self {
         Self { packet_is_empty: true, received_packet_count: 0, error_packet_count: 0, packet_index: 0, start_time: 0 }
     }
@@ -29,11 +29,11 @@ mod tests {
 
     #[test]
     fn normal_types() {
-        is_normal::<ReceiverSerial>();
+        is_normal::<RadioSerial>();
     }
     #[test]
     fn new() {
-        let receiver = ReceiverSerial::new();
-        assert!(receiver.packet_is_empty);
+        let radio = RadioSerial::new();
+        assert!(radio.packet_is_empty);
     }
 }
