@@ -6,6 +6,7 @@ use {
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RadioType {
     #[default]
     Crsf,
@@ -25,6 +26,9 @@ impl RadioType {
         }
     }
 }
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RadioType {}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -93,6 +97,10 @@ mod tests {
         is_full::<RxConfig>();
         #[cfg(feature = "serde")]
         is_config::<RxConfig>();
+
+        is_full::<RadioType>();
+        #[cfg(feature = "serde")]
+        is_config::<RadioType>();
     }
     #[test]
     fn test_new() {
