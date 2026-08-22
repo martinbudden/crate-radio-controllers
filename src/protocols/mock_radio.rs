@@ -11,9 +11,6 @@ impl Default for MockRadio {
     }
 }
 
-#[allow(missing_docs)]
-impl MockRadio {}
-
 impl MockRadio {
     /// Constructor.
     #[must_use]

@@ -21,6 +21,12 @@ pub struct RcAdjustmentRange {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RcAdjustmentRange {}
 
+impl Default for RcAdjustmentRange {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RcAdjustmentRange {
     /// Constructor.
     #[must_use]
@@ -33,12 +39,6 @@ impl RcAdjustmentRange {
             adjustment_center: 0,
             adjustment_scale: 0,
         }
-    }
-}
-
-impl Default for RcAdjustmentRange {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -72,17 +72,17 @@ pub struct RcTimedAdjustmentState {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RcTimedAdjustmentState {}
 
+impl Default for RcTimedAdjustmentState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RcTimedAdjustmentState {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { timeout_at_milliseconds: 0, adjustment_range_index: 0, ready: 0 }
-    }
-}
-
-impl Default for RcTimedAdjustmentState {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

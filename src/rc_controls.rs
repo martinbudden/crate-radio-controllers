@@ -15,17 +15,17 @@ pub struct RcControlsConfig {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RcControlsConfig {}
 
+impl Default for RcControlsConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RcControlsConfig {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self { deadband: 0, yaw_deadband: 0, yaw_control_reversed: 0 }
-    }
-}
-
-impl Default for RcControlsConfig {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

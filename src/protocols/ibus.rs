@@ -17,12 +17,6 @@ pub struct IbusFrame {
     pub channels: [u16; Self::CHANNEL_COUNT],
 }
 
-impl IbusFrame {
-    pub const fn new() -> Self {
-        Self { channels: [0u16; Self::CHANNEL_COUNT] }
-    }
-}
-
 impl Default for IbusFrame {
     fn default() -> Self {
         Self::new()
@@ -33,6 +27,13 @@ impl IbusFrame {
     pub const CHANNEL_COUNT: usize = 14;
     pub const PACKET_LENGTH: usize = 32;
 
+    /// Constructor.
+    pub const fn new() -> Self {
+        Self { channels: [0u16; Self::CHANNEL_COUNT] }
+    }
+}
+
+impl IbusFrame {
     /// The iBUS checksum is the one's complement of the sum of the first 30 bytes.
     /// Start with a value of 0xFFFF and subtract every byte from it.
     pub fn checksum(data: &[u8; Self::PACKET_LENGTH]) -> u16 {

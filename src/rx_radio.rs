@@ -164,7 +164,19 @@ pub struct RxFrame {
     pub rssi: u8,
 }
 
+impl Default for RxFrame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RxFrame {
+    // SBUS has 18 channels (the last two are digital channels with the two values 1000 or 2000), but we only use 16.
+    // IBUS has 14 channels
+    // CRSF has 16 channels
+    pub const MAX_CHANNEL_COUNT: usize = 16;
+    pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
+
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
@@ -193,19 +205,7 @@ impl RxFrame {
     }
 }
 
-impl Default for RxFrame {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl RxFrame {
-    // SBUS has 18 channels (the last two are digital channels with the two values 1000 or 2000), but we only use 16.
-    // IBUS has 14 channels
-    // CRSF has 16 channels
-    pub const MAX_CHANNEL_COUNT: usize = 16;
-    pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
-
     /// Returns true if the frame is safe to use for flight control.
     #[must_use]
     pub fn is_valid(&self) -> bool {

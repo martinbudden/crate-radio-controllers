@@ -19,9 +19,6 @@ impl Default for IbusRadio {
     }
 }
 
-#[allow(missing_docs)]
-impl IbusRadio {}
-
 impl IbusRadio {
     /// Constructor.
     #[must_use]

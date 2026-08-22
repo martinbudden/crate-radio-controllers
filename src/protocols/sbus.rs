@@ -9,6 +9,12 @@ pub struct SbusFrame {
     pub rssi: u8,
 }
 
+impl Default for SbusFrame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SbusFrame {
     const AUX13: u8 = 0x01;
     const AUX14: u8 = 0x02;
@@ -17,12 +23,6 @@ impl SbusFrame {
 
     pub const fn new() -> Self {
         Self { channels: [0u16; Self::CHANNEL_COUNT], flags: 0, rssi: 0 }
-    }
-}
-
-impl Default for SbusFrame {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -86,6 +86,12 @@ struct SbusParser {
     buffer: [u8; Self::PACKET_LENGTH],
 }
 
+impl Default for SbusParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SbusParser {
     pub const HEADER_LENGTH: usize = 1;
     pub const PAYLOAD_LENGTH: usize = 22;
@@ -93,12 +99,6 @@ impl SbusParser {
 
     pub const fn new() -> Self {
         Self { state: ParserState::WaitingForHeader, buffer: [0u8; Self::PACKET_LENGTH] }
-    }
-}
-
-impl Default for SbusParser {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

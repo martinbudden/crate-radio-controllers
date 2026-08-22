@@ -14,16 +14,22 @@ pub struct RatesConfig {
     pub rates: [u8; Self::AXIS_COUNT],
     pub throttle_midpoint: u8,
     pub throttle_expo: u8,
-    pub throttle_limit_type: u8,
+    pub throttle_limit_type: ThrottleLimitType,
     pub throttle_limit_percent: u8, // Sets the maximum pilot commanded throttle limit
-                                    //pub rates_type: u8, // not used
+                                    // pub rates_type: RatesType, // not used
 }
 
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RatesConfig {}
 
-#[allow(missing_docs)]
+impl Default for RatesConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RatesConfig {
+    /// Constructor.
     pub const AXIS_COUNT: usize = 3;
 
     pub const LIMIT_MAX: u16 = 1998;
@@ -31,21 +37,6 @@ impl RatesConfig {
     pub const RC_EXPOS_MAX: u8 = 100;
     pub const THROTTLE_MAX: u8 = 100;
 
-    pub const TYPE_BETAFLIGHT: u8 = 0;
-    pub const TYPE_RACEFLIGHT: u8 = 1;
-    pub const TYPE_KISS: u8 = 2;
-    pub const TYPE_ACTUAL: u8 = 3;
-    pub const TYPE_QUICK: u8 = 4;
-    pub const TYPE_COUNT: u8 = 5;
-
-    pub const THROTTLE_LIMIT_TYPE_OFF: u8 = 0;
-    pub const THROTTLE_LIMIT_TYPE_SCALE: u8 = 1;
-    pub const THROTTLE_LIMIT_TYPE_CLIP: u8 = 2;
-    pub const THROTTLE_LIMIT_TYPE_COUNT: u8 = 3;
-}
-
-impl RatesConfig {
-    /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -55,16 +46,87 @@ impl RatesConfig {
             rates: [67, 67, 67],
             throttle_midpoint: 50,
             throttle_expo: 0,
-            throttle_limit_type: Self::THROTTLE_LIMIT_TYPE_OFF,
+            throttle_limit_type: ThrottleLimitType::Off,
             throttle_limit_percent: 100,
-            //rates_type: Self::TYPE_ACTUAL,
+            // rates_type: RatesType::Actual, not used
         }
     }
 }
 
-impl Default for RatesConfig {
-    fn default() -> Self {
-        Self::new()
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ThrottleLimitType {
+    #[default]
+    Off = 0,
+    Scale = 1,
+    Clip = 2,
+}
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for ThrottleLimitType {}
+
+impl ThrottleLimitType {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Off,
+            1 => Self::Scale,
+            2 => Self::Clip,
+            _ => Self::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn try_from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Off),
+            1 => Some(Self::Scale),
+            2 => Some(Self::Clip),
+            _ => None,
+        }
+    }
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum RatesType {
+    Betaflight = 0,
+    Raceflight = 1,
+    Kiss = 2,
+    #[default]
+    Actual = 3,
+    Quick = 4,
+}
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RatesType {}
+
+#[allow(unused)]
+impl RatesType {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Betaflight,
+            1 => Self::Raceflight,
+            2 => Self::Kiss,
+            3 => Self::Actual,
+            4 => Self::Quick,
+            _ => Self::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn try_from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Betaflight),
+            1 => Some(Self::Raceflight),
+            2 => Some(Self::Kiss),
+            3 => Some(Self::Actual),
+            4 => Some(Self::Quick),
+            _ => None,
+        }
     }
 }
 
@@ -77,13 +139,26 @@ pub struct Rates {
     pub rates: [f32; Self::AXIS_COUNT],
     pub throttle_midpoint: f32,
     pub throttle_expo: f32,
-    pub throttle_limit_type: u8,
+    pub throttle_limit_type: ThrottleLimitType,
     pub throttle_limit_percent: f32, // Sets the maximum pilot commanded throttle limit
     pub max_roll_angle_degrees: f32,
     pub max_pitch_angle_degrees: f32,
 }
 
+impl Default for Rates {
+    fn default() -> Self {
+        Self::new(RatesConfig::default())
+    }
+}
+
 impl Rates {
+    pub const ROLL: usize = 0;
+    pub const PITCH: usize = 1;
+    pub const YAW: usize = 2;
+    pub const AXIS_COUNT: usize = 3;
+    pub const LIMIT_MAX: f32 = 1998.0;
+
+    /// Constructor.
     #[must_use]
     pub fn new(config: RatesConfig) -> Self {
         Self {
@@ -100,20 +175,6 @@ impl Rates {
             //rates_type: Self::TYPE_ACTUAL,
         }
     }
-}
-
-impl Default for Rates {
-    fn default() -> Self {
-        Self::new(RatesConfig::default())
-    }
-}
-
-impl Rates {
-    pub const ROLL: usize = 0;
-    pub const PITCH: usize = 1;
-    pub const YAW: usize = 2;
-    pub const AXIS_COUNT: usize = 3;
-    pub const LIMIT_MAX: f32 = 1998.0;
 }
 
 impl Rates {
@@ -177,7 +238,7 @@ mod tests {
         assert_eq!([67, 67, 67], rates.rates);
         assert_eq!(50, rates.throttle_midpoint);
         assert_eq!(0, rates.throttle_expo);
-        assert_eq!(RatesConfig::THROTTLE_LIMIT_TYPE_OFF, rates.throttle_limit_type);
+        assert_eq!(ThrottleLimitType::Off, rates.throttle_limit_type);
         assert_eq!(100, rates.throttle_limit_percent);
     }
     #[test]

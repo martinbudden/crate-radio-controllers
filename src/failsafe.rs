@@ -13,15 +13,20 @@ pub struct FailsafeConfig {
     pub recovery_delay_deciseconds: u16, // time of valid rx data needed to allow recovery from failsafe and re-arming
     pub delay_deciseconds: u8,
     pub landing_time_seconds: u8, // time allowed in landing phase before disarm
-    pub procedure: u8,
-    pub switch_mode: u8,
+    pub procedure: FailsafeProcedure,
+    pub switch_mode: FailsafeSwitchMode,
     pub stick_threshold_percent: u8, // _stick deflection percentage to exit GPS Rescue procedure
 }
 
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for FailsafeConfig {}
 
-#[allow(missing_docs)]
+impl Default for FailsafeConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FailsafeConfig {
     pub const DISARMED: u8 = 0;
     pub const IDLE: u8 = 1;
@@ -32,17 +37,6 @@ impl FailsafeConfig {
     pub const LANDED: u8 = 6;
     pub const GPS_RESCUE: u8 = 7;
 
-    pub const PROCEDURE_DROP_IT: u8 = 0;
-    pub const PROCEDURE_AUTO_LANDING: u8 = 1;
-    pub const PROCEDURE_GPS_RESCUE: u8 = 2;
-    pub const PROCEDURE_COUNT: u8 = 3;
-
-    pub const SWITCH_MODE_STAGE1: u8 = 0;
-    pub const SWITCH_MODE_STAGE2: u8 = 2;
-    pub const SWITCH_MODE_KILL: u8 = 3;
-}
-
-impl FailsafeConfig {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
@@ -52,16 +46,80 @@ impl FailsafeConfig {
             recovery_delay_deciseconds: 5,
             delay_deciseconds: 15,
             landing_time_seconds: 60,
-            procedure: Self::PROCEDURE_DROP_IT,
-            switch_mode: Self::SWITCH_MODE_STAGE1,
+            procedure: FailsafeProcedure::DropIt,
+            switch_mode: FailsafeSwitchMode::Stage1,
             stick_threshold_percent: 30,
         }
     }
 }
 
-impl Default for FailsafeConfig {
-    fn default() -> Self {
-        Self::new()
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum FailsafeProcedure {
+    #[default]
+    DropIt = 0,
+    AutoLanding = 1,
+    GpsRescue = 2,
+}
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for FailsafeProcedure {}
+
+impl FailsafeProcedure {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::DropIt,
+            1 => Self::AutoLanding,
+            2 => Self::GpsRescue,
+            _ => Self::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn try_from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::DropIt),
+            1 => Some(Self::AutoLanding),
+            2 => Some(Self::GpsRescue),
+            _ => None,
+        }
+    }
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum FailsafeSwitchMode {
+    #[default]
+    Stage1 = 0,
+    Stage2 = 1,
+    Kill = 2,
+}
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for FailsafeSwitchMode {}
+
+impl FailsafeSwitchMode {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Stage1,
+            1 => Self::Stage2,
+            2 => Self::Kill,
+            _ => Self::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn try_from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Stage1),
+            1 => Some(Self::Stage2),
+            2 => Some(Self::Kill),
+            _ => None,
+        }
     }
 }
 
@@ -91,8 +149,8 @@ mod tests {
         assert_eq!(failsafe.recovery_delay_deciseconds, 5);
         assert_eq!(failsafe.delay_deciseconds, 15);
         assert_eq!(failsafe.landing_time_seconds, 60);
-        assert_eq!(failsafe.procedure, FailsafeConfig::PROCEDURE_DROP_IT);
-        assert_eq!(failsafe.switch_mode, FailsafeConfig::SWITCH_MODE_STAGE1);
+        assert_eq!(failsafe.procedure, FailsafeProcedure::DropIt);
+        assert_eq!(failsafe.switch_mode, FailsafeSwitchMode::Stage1);
         assert_eq!(failsafe.stick_threshold_percent, 30);
     }
 }

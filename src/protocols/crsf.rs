@@ -184,6 +184,12 @@ pub struct CrsfLinkStatistics {
     pub downlink_lq: u8,
 }
 
+impl Default for CrsfLinkStatistics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CrsfLinkStatistics {
     pub const fn new() -> Self {
         Self {
@@ -195,12 +201,6 @@ impl CrsfLinkStatistics {
             downlink_rssi_dbm: 0,
             downlink_lq: 0,
         }
-    }
-}
-
-impl Default for CrsfLinkStatistics {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

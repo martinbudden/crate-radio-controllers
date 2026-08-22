@@ -25,6 +25,12 @@ pub struct RxChannelRange {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RxChannelRange {}
 
+impl Default for RxChannelRange {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RxChannelRange {
     /// Constructor.
     #[must_use]
@@ -36,12 +42,6 @@ impl RxChannelRange {
     #[must_use]
     pub fn from_pwm(pwm_start: u16, pwm_end: u16) -> Self {
         Self { start: Self::pwm_to_step(pwm_start), end: Self::pwm_to_step(pwm_end.max(pwm_start)) }
-    }
-}
-
-impl Default for RxChannelRange {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -118,6 +118,12 @@ pub struct ModeActivationCondition {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for ModeActivationCondition {}
 
+impl Default for ModeActivationCondition {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ModeActivationCondition {
     /// Constructor.
     #[must_use]
@@ -128,12 +134,6 @@ impl ModeActivationCondition {
     #[must_use]
     pub const fn from_range_mode_channel(range: RxChannelRange, mode_id: u8, aux_channel_index: u8) -> Self {
         Self { range, mode_id, aux_channel_index, mode_logic: 0, linked_to: 0 }
-    }
-}
-
-impl Default for ModeActivationCondition {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -168,6 +168,12 @@ pub struct RcModes {
 
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RcModes {}
+
+impl Default for RcModes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl RcModes {
     pub const MAX_MODE_ACTIVATION_CONDITION_COUNT: usize = 20;
@@ -259,12 +265,6 @@ impl RcModes {
         };
         this.analyze_macs();
         this
-    }
-}
-
-impl Default for RcModes {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

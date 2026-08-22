@@ -4,32 +4,6 @@ use {
     serde::{Deserialize, Serialize},
 };
 
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RadioType {
-    #[default]
-    Crsf,
-    Ibus,
-    Mock,
-}
-
-impl RadioType {
-    pub const COUNT: u8 = 3;
-
-    #[must_use]
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            1 => Self::Ibus,
-            2 => Self::Mock,
-            _ => Self::default(),
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl PostcardValue<'_> for RadioType {}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RxConfig {
@@ -52,6 +26,12 @@ pub struct RxConfig {
 
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RxConfig {}
+
+impl Default for RxConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl RxConfig {
     /// Constructor.
@@ -77,9 +57,38 @@ impl RxConfig {
     }
 }
 
-impl Default for RxConfig {
-    fn default() -> Self {
-        Self::new()
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum RadioType {
+    #[default]
+    Crsf,
+    Ibus,
+    Mock,
+}
+
+#[cfg(feature = "serde")]
+impl PostcardValue<'_> for RadioType {}
+
+impl RadioType {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Crsf,
+            1 => Self::Ibus,
+            2 => Self::Mock,
+            _ => Self::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn try_from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Crsf),
+            1 => Some(Self::Ibus),
+            2 => Some(Self::Mock),
+            _ => None,
+        }
     }
 }
 

@@ -33,9 +33,9 @@ mod rx_radio;
 
 pub use crate::protocols::{CrsfRadio, IbusRadio, MockRadio};
 pub use controls::{RcSticks, RxControlsPwm};
-pub use failsafe::FailsafeConfig;
+pub use failsafe::{FailsafeConfig, FailsafeProcedure, FailsafeSwitchMode};
 pub use mock_uart::MockUart;
-pub use rates::{Rates, RatesConfig};
+pub use rates::{Rates, RatesConfig, RatesType, ThrottleLimitType};
 pub use rc_adjustments::{
     RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,
     RcTimedAdjustmentState,
