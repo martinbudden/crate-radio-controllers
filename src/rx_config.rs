@@ -58,7 +58,7 @@ impl RxConfig {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RadioType {
     #[default]
@@ -70,6 +70,8 @@ pub enum RadioType {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RadioType {}
 
+impl_try_from_u8!(RadioType);
+
 impl RadioType {
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
@@ -80,16 +82,6 @@ impl RadioType {
             _ => Self::default(),
         }
     }
-
-    #[must_use]
-    pub fn try_from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Crsf),
-            1 => Some(Self::Ibus),
-            2 => Some(Self::Mock),
-            _ => None,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -98,6 +90,7 @@ mod tests {
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
     fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
@@ -107,7 +100,7 @@ mod tests {
         #[cfg(feature = "serde")]
         is_config::<RxConfig>();
 
-        is_full::<RadioType>();
+        is_full_eq::<RadioType>();
         #[cfg(feature = "serde")]
         is_config::<RadioType>();
     }

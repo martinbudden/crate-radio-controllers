@@ -54,7 +54,7 @@ impl FailsafeConfig {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum FailsafeProcedure {
     #[default]
@@ -66,6 +66,8 @@ pub enum FailsafeProcedure {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for FailsafeProcedure {}
 
+impl_try_from_u8!(FailsafeProcedure);
+
 impl FailsafeProcedure {
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
@@ -76,20 +78,10 @@ impl FailsafeProcedure {
             _ => Self::default(),
         }
     }
-
-    #[must_use]
-    pub fn try_from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::DropIt),
-            1 => Some(Self::AutoLanding),
-            2 => Some(Self::GpsRescue),
-            _ => None,
-        }
-    }
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum FailsafeSwitchMode {
     #[default]
@@ -101,6 +93,8 @@ pub enum FailsafeSwitchMode {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for FailsafeSwitchMode {}
 
+impl_try_from_u8!(FailsafeSwitchMode);
+
 impl FailsafeSwitchMode {
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
@@ -109,16 +103,6 @@ impl FailsafeSwitchMode {
             1 => Self::Stage2,
             2 => Self::Kill,
             _ => Self::default(),
-        }
-    }
-
-    #[must_use]
-    pub fn try_from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Stage1),
-            1 => Some(Self::Stage2),
-            2 => Some(Self::Kill),
-            _ => None,
         }
     }
 }
@@ -131,11 +115,14 @@ mod tests {
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
     fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
+        is_full_eq::<FailsafeSwitchMode>();
+        is_full_eq::<FailsafeProcedure>();
         is_full::<FailsafeConfig>();
         #[cfg(feature = "serde")]
         is_config::<FailsafeConfig>();

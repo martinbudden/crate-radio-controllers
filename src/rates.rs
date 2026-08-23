@@ -66,6 +66,8 @@ pub enum ThrottleLimitType {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for ThrottleLimitType {}
 
+impl_try_from_u8!(ThrottleLimitType);
+
 impl ThrottleLimitType {
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
@@ -76,20 +78,10 @@ impl ThrottleLimitType {
             _ => Self::default(),
         }
     }
-
-    #[must_use]
-    pub fn try_from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Off),
-            1 => Some(Self::Scale),
-            2 => Some(Self::Clip),
-            _ => None,
-        }
-    }
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RatesType {
     Betaflight = 0,
@@ -103,6 +95,8 @@ pub enum RatesType {
 #[cfg(feature = "serde")]
 impl PostcardValue<'_> for RatesType {}
 
+impl_try_from_u8!(RatesType);
+
 #[allow(unused)]
 impl RatesType {
     #[must_use]
@@ -114,18 +108,6 @@ impl RatesType {
             3 => Self::Actual,
             4 => Self::Quick,
             _ => Self::default(),
-        }
-    }
-
-    #[must_use]
-    pub fn try_from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Betaflight),
-            1 => Some(Self::Raceflight),
-            2 => Some(Self::Kiss),
-            3 => Some(Self::Actual),
-            4 => Some(Self::Quick),
-            _ => None,
         }
     }
 }
@@ -218,6 +200,7 @@ mod tests {
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
     fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
@@ -227,6 +210,7 @@ mod tests {
         #[cfg(feature = "serde")]
         is_config::<RatesConfig>();
         is_full::<Rates>();
+        is_full_eq::<RatesType>();
     }
     #[test]
     fn new() {

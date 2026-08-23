@@ -19,6 +19,9 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::doc_paragraphs_missing_punctuation)]
 
+#[macro_use]
+mod macros;
+
 mod controls;
 mod failsafe;
 mod mock_uart;
