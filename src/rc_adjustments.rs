@@ -1,12 +1,13 @@
 use crate::RxChannelRange;
 #[cfg(feature = "serde")]
 use {
+    postcard::experimental::max_size::MaxSize,
     sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcAdjustmentRange {
     // when aux channel is in range...
     pub range: RxChannelRange,
@@ -43,7 +44,7 @@ impl RcAdjustmentRange {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub enum RcAdjustmentMode {
     #[default]
     Step,
@@ -62,7 +63,7 @@ impl RcAdjustmentMode {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcTimedAdjustmentState {
     pub timeout_at_milliseconds: u32,
     pub adjustment_range_index: u8,
@@ -87,7 +88,7 @@ impl RcTimedAdjustmentState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcContinuosAdjustmentState {
     pub adjustment_range_index: u8,
     pub last_rc_data: u16,
@@ -111,7 +112,7 @@ impl Default for RcContinuosAdjustmentState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcAdjustmentData {
     pub step: u8,
     pub switch_positions: u8,
@@ -135,7 +136,7 @@ impl Default for RcAdjustmentData {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcAdjustmentConfig {
     pub adjustment: u8,
     pub adjustment_mode: u8,
@@ -160,13 +161,13 @@ impl Default for RcAdjustmentConfig {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
@@ -199,6 +200,12 @@ mod tests {
         is_config::<RcAdjustmentData>();
         is_config::<RcAdjustmentRange>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn test_new() {
         let config = RcAdjustmentConfig::new();

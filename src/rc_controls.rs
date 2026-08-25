@@ -1,11 +1,12 @@
 #[cfg(feature = "serde")]
 use {
+    postcard::experimental::max_size::MaxSize,
     sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcControlsConfig {
     pub deadband: u8,
     pub yaw_deadband: u8,         // invert the serial RX protocol compared to its default setting.
@@ -30,14 +31,14 @@ impl RcControlsConfig {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
@@ -45,6 +46,11 @@ mod tests {
         #[cfg(feature = "serde")]
         is_config::<RcControlsConfig>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
     #[test]
     fn test_new() {
         let config = RcControlsConfig::new();

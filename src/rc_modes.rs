@@ -3,6 +3,7 @@ use simple_bitset::BitSet64;
 
 #[cfg(feature = "serde")]
 use {
+    postcard::experimental::max_size::MaxSize,
     sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
@@ -16,7 +17,7 @@ use {
 /// So for example if the `CHANNEL_AUX1` is > 1500 that might correspond to the motors being "armed"
 /// while a value < 1500 might correspond to the motors being "disarmed".
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RxChannelRange {
     pub start: u8,
     pub end: u8,
@@ -106,7 +107,7 @@ type MacArrayType = [ModeActivationCondition; RcModes::MAX_MODE_ACTIVATION_CONDI
 /// Mode Activation Condition (MAC).<br><br>
 ///
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct ModeActivationCondition {
     pub range: RxChannelRange,
     pub mode_id: u8,
@@ -155,7 +156,7 @@ impl ModeActivationCondition {
 
 /// Radio control modes.<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RcModes {
     pub active_mac_count: usize,
     pub linked_mac_count: usize,
@@ -410,15 +411,13 @@ impl RcModes {
 }
 
 #[cfg(test)]
-mod tests {
-    #![allow(clippy::panic)]
-
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
@@ -433,6 +432,13 @@ mod tests {
         #[cfg(feature = "serde")]
         is_config::<RcModes>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::panic)]
+
+    use super::*;
     #[test]
     fn test_new() {
         let rc_modes = RcModes::default();

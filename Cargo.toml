@@ -33,8 +33,8 @@ serde = ["dep:serde", "postcard", "sequential-storage", "simple-bitset/serde"]
 
 [dependencies]
 libm = { version = "0.2.16", optional = true }
-serde = { version = "1.0.228", default-features = false, features = ["derive"], optional = true }
-postcard = { version = "1.1.3", default-features = false, features = ["embedded-io"], optional = true }
+serde = { version = "1.0.229", default-features = false, features = ["derive"], optional = true }
+postcard = { version = "1.1.3", default-features = false, features = ["embedded-io", "experimental-derive"], optional = true }
 sequential-storage = { version = "8.0.1", features = ["postcard"], optional = true }
 #simple-bitset = "0.1.5"
 simple-bitset = { git = "https://github.com/martinbudden/crate-simple-bitset" }

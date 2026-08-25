@@ -1,12 +1,13 @@
 #[cfg(feature = "serde")]
 use {
+    postcard::experimental::max_size::MaxSize,
     sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
 /// Configuration data for Rates.
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct RatesConfig {
     pub limits: [u16; Self::AXIS_COUNT],
     pub rc_rates: [u8; Self::AXIS_COUNT],
@@ -55,7 +56,7 @@ impl RatesConfig {
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub enum ThrottleLimitType {
     #[default]
     Off = 0,
@@ -82,7 +83,7 @@ impl ThrottleLimitType {
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub enum RatesType {
     Betaflight = 0,
     Raceflight = 1,
@@ -193,16 +194,14 @@ impl Rates {
 }
 
 #[cfg(test)]
-mod tests {
-    #![allow(clippy::float_cmp)]
-
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
@@ -212,6 +211,14 @@ mod tests {
         is_full::<Rates>();
         is_full_eq::<RatesType>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::float_cmp)]
+
+    use super::*;
+
     #[test]
     fn new() {
         let rates = RatesConfig::new();
