@@ -1,5 +1,5 @@
+mod crc_dvb_s2;
 mod crsf;
-mod crsf_crc;
 mod crsf_radio;
 mod ibus;
 mod ibus_radio;
@@ -8,7 +8,7 @@ mod protocol;
 mod sbus;
 mod serial_radio;
 
-pub use crsf_crc::crsf_crc8;
+pub use crc_dvb_s2::CrcDvbS2;
 pub use crsf_radio::CrsfRadio;
 pub use ibus_radio::IbusRadio;
 pub use mock_radio::MockRadio;

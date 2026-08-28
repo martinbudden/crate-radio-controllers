@@ -1,5 +1,4 @@
 #![allow(unused)]
-//use embedded_hal_nb::serial::{Error};
 use crate::{RxChannel, RxFrame, RxLinkStatus};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -16,8 +15,10 @@ impl Default for SbusFrame {
 }
 
 impl SbusFrame {
-    const AUX13: u8 = 0x01;
-    const AUX14: u8 = 0x02;
+    /// Deliberately no not support AUX13.
+    const _AUX13: u8 = 0x01;
+    /// Deliberately no not support AUX14.
+    const _AUX14: u8 = 0x02;
     const FRAME_LOST: u8 = 0x04;
     const FAILSAFE: u8 = 0x08;
 

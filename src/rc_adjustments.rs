@@ -1,4 +1,5 @@
-use crate::RxChannelRange;
+use super::RxChannelRange;
+
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,

@@ -1,4 +1,5 @@
-use crate::{RcMode, RxChannel, RxFrame};
+use super::{RcMode, RxChannel, RxFrame};
+
 use simple_bitset::BitSet64;
 
 #[cfg(feature = "serde")]

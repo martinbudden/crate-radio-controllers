@@ -1,7 +1,6 @@
 use crate::{
-    RxFrame, RxRadioCommon,
+    RxFrame, RxRadio, RxRadioCommon,
     protocols::{RxProtocol, ibus::IbusFrame, serial_radio::RadioSerial},
-    rx_radio::RxRadio,
 };
 
 /// Ibus radio<br><br>

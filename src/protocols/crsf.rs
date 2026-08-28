@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::{protocols::crsf_crc8, rx_radio::RxChannels};
+use crate::{protocols::CrcDvbS2, rx_radio::RxChannels};
 
 /// `CrsfPacket` is represented as an enum, as per Rust idiom.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -151,7 +151,7 @@ impl CrsfParser {
     /// `[Sync] [Length] [Type] [Payload...] [CRC]`
     /// Note: Length includes everything from Type to CRC.
     pub fn _unpack_packet(packet: [u8; Self::MAX_PACKET_SIZE]) -> CrsfPayload {
-        if crsf_crc8(&packet) != Self::received_crc(packet) {
+        if CrcDvbS2::calculate(&packet) != Self::received_crc(packet) {
             //self.radio_serial.packet_is_empty = true;
             return CrsfPayload::default();
         }

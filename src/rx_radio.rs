@@ -1,4 +1,4 @@
-use crate::{CrsfRadio, MockRadio, RadioType, protocols::IbusRadio};
+use crate::{CrsfRadio, IbusRadio, MockRadio, RadioType};
 
 /// 48-bit extended unique identifier (often synonymous with MAC address).<br><br>
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
