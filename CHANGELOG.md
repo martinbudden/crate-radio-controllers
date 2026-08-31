@@ -9,6 +9,21 @@ that is each release may contain incompatible API changes.
 
 Once the API has stabilized this project will adopt semantic versioning, the first release to do so will be `0.2.0`.
 
+## [0.1.7] - 2026-08-31
+
+### Added
+
+- support for `postcard` `MaxSize`.
+- more tests.
+
+### Changed
+
+- General renaming from "Receiver" to "Radio" to avoid confusion with Embassy `Watch` `Receiver`s.
+- Updated to `sequential-storage` `0.8.1`.
+- use `enum`s rather than `u8`s for config values where appropriate.
+- improved conversion of `enum`s to `u8`s.
+- fixed CRC calculation.
+
 ## [0.1.6] - 2026-08-04
 
 ### Added
