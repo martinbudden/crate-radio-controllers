@@ -23,6 +23,7 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 - use `enum`s rather than `u8`s for config values where appropriate.
 - improved conversion of `enum`s to `u8`s.
 - fixed CRC calculation.
+- no longer dependent on `libm`.
 
 ## [0.1.6] - 2026-08-04
 
