@@ -256,7 +256,7 @@ impl RxRadio for Radio {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
@@ -267,6 +267,12 @@ mod tests {
         is_full::<Eui48>();
         is_full::<RxRadioCommon>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn test_new() {
         let radio = RxRadioCommon::new();
