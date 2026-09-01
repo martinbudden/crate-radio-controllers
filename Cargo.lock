@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "radio-controllers"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "embedded-hal",
  "embedded-hal-nb",
