@@ -8,6 +8,7 @@
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct CrcDvbS2;
 
+#[allow(unused)]
 impl CrcDvbS2 {
     #[inline]
     #[must_use]
@@ -17,6 +18,11 @@ impl CrcDvbS2 {
             crc = Self::LOOKUP[usize::from(crc ^ byte)];
         }
         crc
+    }
+    #[inline]
+    #[must_use]
+    pub fn update(crc: u8, byte: u8) -> u8 {
+        Self::LOOKUP[usize::from(crc ^ byte)]
     }
 }
 
@@ -52,26 +58,6 @@ impl CrcDvbS2 {
     }
 }
 
-impl CrcDvbS2 {
-    #[allow(unused)]
-    #[inline]
-    #[must_use]
-    pub fn calculate_naive(data: &[u8]) -> u8 {
-        let mut crc = 0;
-        for &byte in data {
-            crc ^= byte;
-            for _ in 0..8 {
-                if (crc & 0x80) == 0 {
-                    crc <<= 1;
-                } else {
-                    crc = (crc << 1) ^ Self::POLYNOMIAL;
-                }
-            }
-        }
-        crc
-    }
-}
-
 #[cfg(test)]
 mod test_traits {
     use super::*;
@@ -88,6 +74,21 @@ mod test_traits {
 mod crc_tests {
     use super::*;
 
+    #[must_use]
+    pub fn calculate_crc(data: &[u8]) -> u8 {
+        let mut crc = 0;
+        for &byte in data {
+            crc ^= byte;
+            for _ in 0..8 {
+                if (crc & 0x80) == 0 {
+                    crc <<= 1;
+                } else {
+                    crc = (crc << 1) ^ CrcDvbS2::POLYNOMIAL;
+                }
+            }
+        }
+        crc
+    }
     #[test]
     fn check_value() {
         assert_eq!(0xBC, CrcDvbS2::calculate(b"123456789"));
@@ -100,7 +101,7 @@ mod crc_tests {
 
         // Act & Assert
         for payload in &test_payloads {
-            let bit_by_bit_result = CrcDvbS2::calculate_naive(payload);
+            let bit_by_bit_result = calculate_crc(payload);
             let table_result = CrcDvbS2::calculate(payload);
 
             assert_eq!(table_result, bit_by_bit_result, "CRC mismatch for payload: {payload:?}");
