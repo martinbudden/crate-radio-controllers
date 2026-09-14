@@ -1,9 +1,10 @@
 use super::RxChannelRange;
 
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -20,7 +21,7 @@ pub struct RcAdjustmentRange {
     pub adjustment_scale: u16,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcAdjustmentRange {}
 
 impl Default for RcAdjustmentRange {
@@ -52,7 +53,7 @@ pub enum RcAdjustmentMode {
     Select,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcAdjustmentMode {}
 
 impl RcAdjustmentMode {
@@ -71,7 +72,7 @@ pub struct RcTimedAdjustmentState {
     pub ready: u8,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcTimedAdjustmentState {}
 
 impl Default for RcTimedAdjustmentState {
@@ -95,7 +96,7 @@ pub struct RcContinuosAdjustmentState {
     pub last_rc_data: u16,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcContinuosAdjustmentState {}
 
 impl RcContinuosAdjustmentState {
@@ -119,7 +120,7 @@ pub struct RcAdjustmentData {
     pub switch_positions: u8,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcAdjustmentData {}
 
 impl RcAdjustmentData {
@@ -144,7 +145,7 @@ pub struct RcAdjustmentConfig {
     pub data: u8,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcAdjustmentConfig {}
 
 impl RcAdjustmentConfig {
@@ -168,38 +169,38 @@ mod test_traits {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RcAdjustmentRange>();
-        #[cfg(feature = "serde")]
-        is_config::<RcAdjustmentRange>();
         is_full::<RcAdjustmentMode>();
-        #[cfg(feature = "serde")]
-        is_config::<RcAdjustmentMode>();
         is_full::<RcTimedAdjustmentState>();
-        #[cfg(feature = "serde")]
-        is_config::<RcTimedAdjustmentState>();
         is_full::<RcContinuosAdjustmentState>();
-        #[cfg(feature = "serde")]
-        is_config::<RcContinuosAdjustmentState>();
         is_full::<RcAdjustmentData>();
-        #[cfg(feature = "serde")]
-        is_config::<RcAdjustmentData>();
         is_full::<RcAdjustmentRange>();
-        #[cfg(feature = "serde")]
-        is_config::<RcAdjustmentRange>();
     }
     #[cfg(feature = "serde")]
     #[test]
-    fn config_types() {
-        is_config::<RcAdjustmentRange>();
-        is_config::<RcAdjustmentMode>();
-        is_config::<RcTimedAdjustmentState>();
-        is_config::<RcContinuosAdjustmentState>();
-        is_config::<RcAdjustmentData>();
-        is_config::<RcAdjustmentRange>();
+    fn serde_types() {
+        is_serde::<RcAdjustmentRange>();
+        is_serde::<RcAdjustmentMode>();
+        is_serde::<RcTimedAdjustmentState>();
+        is_serde::<RcContinuosAdjustmentState>();
+        is_serde::<RcAdjustmentData>();
+        is_serde::<RcAdjustmentRange>();
+    }
+    #[cfg(feature = "storage")]
+    #[test]
+    fn storage_types() {
+        is_storage::<RcAdjustmentRange>();
+        is_storage::<RcAdjustmentMode>();
+        is_storage::<RcTimedAdjustmentState>();
+        is_storage::<RcContinuosAdjustmentState>();
+        is_storage::<RcAdjustmentData>();
+        is_storage::<RcAdjustmentRange>();
     }
 }
 

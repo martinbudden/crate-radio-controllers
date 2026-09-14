@@ -1,7 +1,8 @@
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -13,7 +14,7 @@ pub struct RcControlsConfig {
     pub yaw_control_reversed: u8, // allow rx to operate in half duplex mode on STM32 F4, ignored for F1 and F3.
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcControlsConfig {}
 
 impl Default for RcControlsConfig {
@@ -37,14 +38,17 @@ mod test_traits {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RcControlsConfig>();
         #[cfg(feature = "serde")]
-        is_config::<RcControlsConfig>();
+        is_serde::<RcControlsConfig>();
+        #[cfg(feature = "storage")]
+        is_storage::<RcControlsConfig>();
     }
 }
 

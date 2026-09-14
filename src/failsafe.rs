@@ -1,7 +1,8 @@
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -19,7 +20,7 @@ pub struct FailsafeConfig {
     pub stick_threshold_percent: u8, // _stick deflection percentage to exit GPS Rescue procedure
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for FailsafeConfig {}
 
 impl Default for FailsafeConfig {
@@ -64,7 +65,7 @@ pub enum FailsafeProcedure {
     GpsRescue = 2,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for FailsafeProcedure {}
 
 impl_try_from_u8!(FailsafeProcedure);
@@ -91,7 +92,7 @@ pub enum FailsafeSwitchMode {
     Kill = 2,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for FailsafeSwitchMode {}
 
 impl_try_from_u8!(FailsafeSwitchMode);
@@ -116,7 +117,9 @@ mod test_traits {
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
@@ -124,7 +127,9 @@ mod test_traits {
         is_full_eq::<FailsafeProcedure>();
         is_full::<FailsafeConfig>();
         #[cfg(feature = "serde")]
-        is_config::<FailsafeConfig>();
+        is_serde::<FailsafeConfig>();
+        #[cfg(feature = "storage")]
+        is_storage::<FailsafeConfig>();
     }
 }
 

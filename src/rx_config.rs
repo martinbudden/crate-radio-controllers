@@ -1,7 +1,8 @@
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -25,7 +26,7 @@ pub struct RxConfig {
     pub rx_max_us: u16, // rx_max in microseconds
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RxConfig {}
 
 impl Default for RxConfig {
@@ -68,7 +69,7 @@ pub enum RadioType {
     Mock,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RadioType {}
 
 impl_try_from_u8!(RadioType);
@@ -93,17 +94,23 @@ mod test_traits {
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RxConfig>();
         #[cfg(feature = "serde")]
-        is_config::<RxConfig>();
+        is_serde::<RxConfig>();
+        #[cfg(feature = "storage")]
+        is_storage::<RxConfig>();
 
         is_full_eq::<RadioType>();
         #[cfg(feature = "serde")]
-        is_config::<RadioType>();
+        is_serde::<RadioType>();
+        #[cfg(feature = "storage")]
+        is_storage::<RadioType>();
     }
 }
 

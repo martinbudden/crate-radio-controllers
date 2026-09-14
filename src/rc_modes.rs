@@ -2,10 +2,11 @@ use super::{RcMode, RxChannel, RxFrame};
 
 use simple_bitset::BitSet64;
 
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -24,7 +25,7 @@ pub struct RxChannelRange {
     pub end: u8,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RxChannelRange {}
 
 impl Default for RxChannelRange {
@@ -117,7 +118,7 @@ pub struct ModeActivationCondition {
     pub linked_to: u8,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for ModeActivationCondition {}
 
 impl Default for ModeActivationCondition {
@@ -168,7 +169,7 @@ pub struct RcModes {
     pub macs: [ModeActivationCondition; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcModes {}
 
 impl Default for RcModes {
@@ -418,20 +419,29 @@ mod test_traits {
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RxChannelRange>();
         is_full::<ModeActivationCondition>();
         is_full::<RcModes>();
-
-        #[cfg(feature = "serde")]
-        is_config::<RxChannelRange>();
-        #[cfg(feature = "serde")]
-        is_config::<ModeActivationCondition>();
-        #[cfg(feature = "serde")]
-        is_config::<RcModes>();
+    }
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_types() {
+        is_serde::<RxChannelRange>();
+        is_serde::<ModeActivationCondition>();
+        is_serde::<RcModes>();
+    }
+    #[cfg(feature = "storage")]
+    #[test]
+    fn storage_types() {
+        is_storage::<RxChannelRange>();
+        is_storage::<ModeActivationCondition>();
+        is_storage::<RcModes>();
     }
 }
 

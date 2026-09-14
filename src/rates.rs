@@ -1,7 +1,8 @@
+#[cfg(feature = "storage")]
+use sequential_storage::map::PostcardValue;
 #[cfg(feature = "serde")]
 use {
     postcard::experimental::max_size::MaxSize,
-    sequential_storage::map::PostcardValue,
     serde::{Deserialize, Serialize},
 };
 
@@ -20,7 +21,7 @@ pub struct RatesConfig {
                                     // pub rates_type: RatesType, // not used
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RatesConfig {}
 
 impl Default for RatesConfig {
@@ -64,7 +65,7 @@ pub enum ThrottleLimitType {
     Clip = 2,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for ThrottleLimitType {}
 
 impl_try_from_u8!(ThrottleLimitType);
@@ -93,7 +94,7 @@ pub enum RatesType {
     Quick = 4,
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "storage")]
 impl PostcardValue<'_> for RatesType {}
 
 impl_try_from_u8!(RatesType);
@@ -201,13 +202,17 @@ mod test_traits {
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
     fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + Eq + PartialEq>() {}
     #[cfg(feature = "serde")]
-    fn is_config<T: Serialize + MaxSize + for<'a> Deserialize<'a> + for<'a> PostcardValue<'a>>() {}
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full::<RatesConfig>();
         #[cfg(feature = "serde")]
-        is_config::<RatesConfig>();
+        is_serde::<RatesConfig>();
+        #[cfg(feature = "storage")]
+        is_storage::<RatesConfig>();
         is_full::<Rates>();
         is_full_eq::<RatesType>();
     }

@@ -62,6 +62,7 @@ impl IbusFrame {
         let mut channels = [0u16; Self::CHANNEL_COUNT];
 
         // Skip the 2-byte header, then take 14 pairs (28 bytes)
+        #[allow(clippy::chunks_exact_to_as_chunks)]
         for (slot, chunk) in channels.iter_mut().zip(buffer[2..30].chunks_exact(2)) {
             *slot = u16::from_le_bytes([chunk[0], chunk[1]]);
         }
