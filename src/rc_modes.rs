@@ -40,6 +40,18 @@ impl RxChannelRange {
     pub const fn new() -> Self {
         Self { start: 0, end: 0 }
     }
+    /// Set the start of a newly constructed range.
+    #[must_use]
+    pub const fn with_start(mut self, start: u8) -> Self {
+        self.start = start;
+        self
+    }
+    /// Set the end of a newly constructed range.
+    #[must_use]
+    pub const fn with_end(mut self, end: u8) -> Self {
+        self.end = end;
+        self
+    }
 
     /// Construct from PWM values.
     #[must_use]
@@ -132,6 +144,36 @@ impl ModeActivationCondition {
     #[must_use]
     pub const fn new() -> Self {
         Self { range: RxChannelRange::new(), mode_id: 0, aux_channel_index: 0, mode_logic: 0, linked_to: 0 }
+    }
+    /// Set the range of a newly MAC.
+    #[must_use]
+    pub const fn with_range(mut self, range: RxChannelRange) -> Self {
+        self.range = range;
+        self
+    }
+    /// Set the mode id of a newly constructed MAC.
+    #[must_use]
+    pub const fn with_mode_id(mut self, mode_id: u8) -> Self {
+        self.mode_id = mode_id;
+        self
+    }
+    /// Set the aux channel index of a newly constructed MAC.
+    #[must_use]
+    pub const fn with_aux_channel_index(mut self, aux_channel_index: u8) -> Self {
+        self.aux_channel_index = aux_channel_index;
+        self
+    }
+    /// Set the mode logic of a newly constructed MAC.
+    #[must_use]
+    pub const fn with_mode_logic(mut self, mode_logic: u8) -> Self {
+        self.mode_logic = mode_logic;
+        self
+    }
+    /// Set the linked to of a newly constructed MAC.
+    #[must_use]
+    pub const fn with_linked_to(mut self, linked_to: u8) -> Self {
+        self.linked_to = linked_to;
+        self
     }
     /// Constructor.
     #[must_use]
