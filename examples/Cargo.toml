@@ -15,9 +15,7 @@ rustc_version = "0.4.1"
 
 default = ["rp235xa"]
 
-rp = ["dep:embassy-rp"] # combined feature for all rp variants
 rp2040 = [
-    "rp",
     "dep:embassy-rp",
     "dep:cortex-m",
     "dep:cortex-m-rt",
@@ -28,7 +26,6 @@ rp2040 = [
     "radio-controllers/rp2040"
 ]
 rp235xa = [
-    "rp",
     "dep:embassy-rp",
     "dep:cortex-m",
     "dep:cortex-m-rt",
@@ -39,7 +36,6 @@ rp235xa = [
     "radio-controllers/rp235xa"
 ]
 rp235xb = [
-    "rp",
     "dep:embassy-rp",
     "dep:cortex-m",
     "dep:cortex-m-rt",
@@ -74,11 +70,10 @@ embassy-time = { version = "0.5.1", default-features = false }
 # Hardware-specific Embassy HAL
 embassy-rp = { version = "0.10.0", default-features = false, optional = true }
 embassy-stm32 = { version = "0.6.0", default-features = false, optional = true }
-embedded-hal-bus = { version = "0.3.0", features = ["async"] }
-esp-hal = { version = "1.2.1", default-features = false, optional = true }
-
-cortex-m = { version = "0.7.9", optional = true }
-cortex-m-rt = { version = "0.7.6" , optional = true }
+#embedded-hal-bus = { version = "0.3.0", features = ["async"] }
+esp-hal = { version = "1.2.2", default-features = false, optional = true }
+cortex-m = { version = "0.7.9", default-features = false, optional = true }
+cortex-m-rt = { version = "0.7.6" , default-features = false, optional = true }
 
 fixed = "1.31.0"
 defmt = { version = "1.0.1" }

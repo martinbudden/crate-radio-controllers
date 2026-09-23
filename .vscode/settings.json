@@ -1,4 +1,10 @@
 {
+    // Explicitly configure how targets are discovered per-crate
+    "rust-analyzer.cargo.allTargets": false,
+    
+    // Set the fallback architecture for embedded files
+    //"rust-analyzer.cargo.target": "thumbv6m-none-eabi",
+    "rust-analyzer.cargo.target": "thumbv8m.main-none-eabihf",
     "cSpell.words": [
         "ACRO",
         "AETR",
@@ -35,6 +41,7 @@
         "eabi",
         "eabihf",
         "enumset",
+        "espflash",
         "fixedbitset",
         "FLIGHTMODE",
         "FRAMETYPE",
@@ -67,6 +74,7 @@
         "PASSTHRU",
         "petgraph",
         "pico",
+        "Picotool",
         "procmacros",
         "RACEFLIGHT",
         "riscv",
@@ -85,6 +93,7 @@
         "smallvec",
         "somni",
         "spektrum",
+        "stext",
         "strsim",
         "SUBCMD",
         "swatinem",
@@ -97,10 +106,12 @@
         "Turnigy",
         "typenum",
         "uart",
+        "uninit",
         "VARIO",
         "vcell",
         "walkdir",
         "winapi",
+        "xensa",
         "xtask",
         "xtensa",
         "zerocopy"

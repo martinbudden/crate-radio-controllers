@@ -1,4 +1,4 @@
-use super::{RcMode, RxChannel, RxFrame};
+use super::{RcMode, RxChannel, RxChannelRange, RxFrame};
 
 use simple_bitset::BitSet64;
 
@@ -9,112 +9,6 @@ use {
     postcard::experimental::max_size::MaxSize,
     serde::{Deserialize, Serialize},
 };
-
-/// PWM channels are divided into "steps". Steps are 25 units wide<br>
-/// There are 48 steps between 900 and 2100.<br>
-///     a step value of 0 corresponds to a channel value of 900 or less.<br>
-///     a step value of 48 corresponds to a channel value of 2100 or more.<br>
-///
-/// Steps are used to convert channel values into "switches"
-/// So for example if the `CHANNEL_AUX1` is > 1500 that might correspond to the motors being "armed"
-/// while a value < 1500 might correspond to the motors being "disarmed".
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
-pub struct RxChannelRange {
-    pub start: u8,
-    pub end: u8,
-}
-
-#[cfg(feature = "storage")]
-impl PostcardValue<'_> for RxChannelRange {}
-
-impl Default for RxChannelRange {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RxChannelRange {
-    /// Constructor.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self { start: 0, end: 0 }
-    }
-    /// Set the start of a newly constructed range.
-    #[must_use]
-    pub const fn with_start(mut self, start: u8) -> Self {
-        self.start = start;
-        self
-    }
-    /// Set the end of a newly constructed range.
-    #[must_use]
-    pub const fn with_end(mut self, end: u8) -> Self {
-        self.end = end;
-        self
-    }
-
-    /// Construct from PWM values.
-    #[must_use]
-    pub fn from_pwm(pwm_start: u16, pwm_end: u16) -> Self {
-        Self { start: Self::pwm_to_step(pwm_start), end: Self::pwm_to_step(pwm_end.max(pwm_start)) }
-    }
-}
-
-impl RxChannelRange {
-    pub const MIN: u16 = 900;
-    pub const MID: u16 = 1500;
-    pub const MAX: u16 = 2100;
-
-    pub const STEP: u16 = 25;
-    pub const STEP_MIN: u16 = 0;
-    pub const STEP_MID: u16 = ((Self::MID - Self::MIN) / Self::STEP);
-    pub const STEP_MAX: u16 = ((Self::MAX - Self::MIN) / Self::STEP);
-
-    #[inline]
-    #[must_use]
-    pub fn step_to_pwm(step: u8) -> u16 {
-        Self::MIN + Self::STEP * u16::from(step)
-    }
-
-    #[allow(clippy::cast_possible_truncation)]
-    #[inline]
-    #[must_use]
-    pub fn pwm_to_step(pwm: u16) -> u8 {
-        ((pwm.clamp(Self::MIN, Self::MAX) - Self::MIN) / Self::STEP) as u8
-    }
-
-    #[inline]
-    pub fn set(&mut self, pwm_start: u16, pwm_end: u16) {
-        if pwm_end > pwm_start {
-            self.start = Self::pwm_to_step(pwm_start);
-            self.end = Self::pwm_to_step(pwm_end);
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn pwm_range(&self) -> (u16, u16) {
-        (Self::step_to_pwm(self.start), Self::step_to_pwm(self.end))
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_range_active(channel_value: u16, start: u8, end: u8) -> bool {
-        if channel_value >= Self::MIN + u16::from(start) * Self::STEP
-            && channel_value < Self::MIN + u16::from(end) * Self::STEP
-        {
-            return true;
-        }
-        false
-    }
-
-    #[must_use]
-    #[inline]
-    pub fn is_active(&self, rx_frame: &RxFrame, aux_channel_index: u8) -> bool {
-        let channel_value: u16 = rx_frame.channel(aux_channel_index);
-        Self::is_range_active(channel_value, self.start, self.end)
-    }
-}
 
 type MacArrayType = [ModeActivationCondition; RcModes::MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
@@ -467,21 +361,18 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full::<RxChannelRange>();
         is_full::<ModeActivationCondition>();
         is_full::<RcModes>();
     }
     #[cfg(feature = "serde")]
     #[test]
     fn serde_types() {
-        is_serde::<RxChannelRange>();
         is_serde::<ModeActivationCondition>();
         is_serde::<RcModes>();
     }
     #[cfg(feature = "storage")]
     #[test]
     fn storage_types() {
-        is_storage::<RxChannelRange>();
         is_storage::<ModeActivationCondition>();
         is_storage::<RcModes>();
     }

@@ -24,17 +24,23 @@ all-features = true
 rustc_version = "0.4.1"
 
 [features]
+#default = ["std", "serde"]
 #default = ["serde"]
+#default = ["rp2040"]
+default = ["rp235xa"]
+#default = ["stm32"]
+#default = ["esp32"]
+
+# Core backend features declared explicitly
 serde = ["dep:serde", "postcard", "simple-bitset/serde"]
 storage = ["dep:sequential-storage", "serde", "simple-bitset/storage"]
 
 # Target platforms
 host = []
 std = ["embassy-time/std", "embassy-executor/platform-std"]
-rp = ["dep:embassy-rp"] # combined feature for all rp variants
-rp2040 = ["rp", "embassy-rp/rp2040"]
-rp235xa = ["rp", "embassy-rp/rp235xa"]
-rp235xb = ["rp", "embassy-rp/rp235xb"]
+rp2040 = ["embassy-rp/rp2040"]
+rp235xa = ["embassy-rp/rp235xa"]
+rp235xb = ["embassy-rp/rp235xb"]
 stm32 = [
     "dep:embassy-stm32",
     "embassy-stm32/time-driver-tim2",
@@ -42,7 +48,7 @@ stm32 = [
     "embassy-executor/executor-thread",
 ]
 stm32f405 = ["stm32", "embassy-stm32/stm32f405rg"]
-esp32 = ["dep:esp-hal", "esp-hal/esp32s3"]
+esp32 = ["dep:esp-hal", "esp-hal/esp32s3", "xtensa-lx"]
 
 [dependencies]
 
@@ -56,9 +62,10 @@ embassy-time = { version = "0.5.1", default-features = false }
 embassy-rp = { version = "0.10.0", default-features = false, optional = true }
 embassy-stm32 = { version = "0.6.0", default-features = false, optional = true }
 esp-hal = { version = "1.2.2", default-features = false, optional = true }
-embedded-hal-nb = { version ="1.0.0", default-features = false }
-embedded-hal = { version = "1.0.0", default-features = false }
-nb = "1.1.0"
+xtensa-lx = { version = "0.13.0", default-features = false, optional = true }
+embedded-hal-nb = { version ="1.0.0", default-features = false } # for Mock UART
+#embedded-hal = { version = "1.0.0", default-features = false }
+nb = "1.1.0" # for Mock UART
 
 # Storage
 serde = { version = "1.0.229", default-features = false, features = ["derive"], optional = true }
@@ -71,7 +78,7 @@ simple-bitset = { version = "0.1.7", default-features = false }
 
 [dev-dependencies]
 # This allows 'cargo test' to work on a PC
-embedded-hal-nb = "1.0.0"
+#embedded-hal-nb = "1.0.0"
 
 # see https://doc.rust-lang.org/cargo/reference/profiles.html
 [profile.dev]
@@ -114,6 +121,8 @@ lto = true
 [workspace]
 members = [
     ".",
+    # "examples",
+]
+exclude = [
     "xtask",
-    "examples",
 ]

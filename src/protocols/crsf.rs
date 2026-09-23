@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::{protocols::CrcDvbS2, rx_radio::RxChannels};
+use crate::{RxChannels, protocols::CrcDvbS2};
 
 /// `CrsfPacket` is represented as an enum, as per Rust idiom.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

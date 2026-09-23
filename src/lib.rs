@@ -31,7 +31,9 @@ mod rc_adjustments;
 mod rc_controls;
 mod rc_mode;
 mod rc_modes;
+mod rx_channel;
 mod rx_config;
+mod rx_frame;
 mod rx_radio;
 
 pub use crate::protocols::{CrsfRadio, IbusRadio, MockRadio};
@@ -45,6 +47,8 @@ pub use rc_adjustments::{
 };
 pub use rc_controls::RcControlsConfig;
 pub use rc_mode::RcMode;
-pub use rc_modes::{ModeActivationCondition, RcModes, RxChannelRange};
+pub use rc_modes::{ModeActivationCondition, RcModes};
+pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
 pub use rx_config::{RadioType, RxConfig};
-pub use rx_radio::{Eui48, Radio, RxChannel, RxFrame, RxLinkStatus, RxRadio, RxRadioCommon};
+pub use rx_frame::{RxFrame, RxLinkStatus};
+pub use rx_radio::{Eui48, Radio, RxRadio, RxRadioCommon};
