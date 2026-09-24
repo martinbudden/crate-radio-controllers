@@ -1,52 +1,10 @@
-use crate::{
-    RxChannel, RxFrame, RxLinkStatus, RxRadioCommon,
-    protocols::{RxProtocol, crsf::CrsfParser, serial_radio::RadioSerial},
-    rx_radio::RxRadio,
-};
+use super::{CrsfFrame, CrsfParser, RadioSerial, RxProtocol};
+use crate::{RxChannel, RxFrame, RxRadio, RxRadioCommon};
 
 /*pub struct CrsfReceiverXXXX<UART> {
     //shared: SerialReceiver<UART>,
     // CRSF specific data
 }*/
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CrsfFrame {
-    pub channels: [u16; Self::CHANNEL_COUNT],
-    pub failsafe: bool,
-    pub frame_lost: bool,
-    pub rssi: u8,
-}
-
-impl Default for CrsfFrame {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl CrsfFrame {
-    const CHANNEL_COUNT: usize = 16;
-
-    pub const fn new() -> Self {
-        Self { channels: [0u16; Self::CHANNEL_COUNT], failsafe: false, frame_lost: false, rssi: 0 }
-    }
-}
-
-impl From<CrsfFrame> for RxFrame {
-    fn from(frame: CrsfFrame) -> Self {
-        let status = if frame.failsafe {
-            RxLinkStatus::Failsafe
-        } else if frame.frame_lost {
-            RxLinkStatus::NoSignal
-        } else {
-            RxLinkStatus::Ok
-        };
-
-        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
-        channels[..frame.channels.len()].copy_from_slice(&frame.channels);
-
-        Self { channels, status, rssi: frame.rssi }
-    }
-}
 
 /// Crossfire radio<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -126,6 +84,9 @@ impl RxRadio for CrsfRadio {
     fn rx_frame(&self) -> RxFrame {
         RxFrame::default()
     }
+    fn on_byte_received(&mut self, byte: u8) -> bool {
+        self.on_data_received_from_isr(byte)
+    }
 }
 
 impl RxProtocol for CrsfRadio {
@@ -201,7 +162,7 @@ impl RxProtocol for CrsfRadio {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
     fn _is_normal<T: Sized + Send + Sync + Unpin>() {}
@@ -212,9 +173,14 @@ mod tests {
         is_full::<CrsfRadio>();
         is_full::<CrsfFrame>();
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
     #[test]
     fn new() {
-        let _radio = CrsfRadio::new();
-        //assert!(radio.is_data_available());
+        let radio = CrsfRadio::new();
+        assert!(!radio.is_data_available());
     }
 }

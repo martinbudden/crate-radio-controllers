@@ -23,6 +23,11 @@ impl RxRadio for MockRadio {
     fn rx_frame(&self) -> RxFrame {
         RxFrame::default()
     }
+    fn on_byte_received(&mut self, byte: u8) -> bool {
+        _ = self;
+        _ = byte;
+        true
+    }
 }
 
 #[cfg(test)]

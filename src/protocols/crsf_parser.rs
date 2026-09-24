@@ -20,7 +20,7 @@ pub enum CrsfPacket {
 pub type CrsfPayload = [u8; CrsfParser::PACKET_LENGTH];
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-pub struct CrsfParser {}
+pub(crate) struct CrsfParser {}
 
 impl CrsfParser {
     pub const MAX_PACKET_SIZE: usize = 64;

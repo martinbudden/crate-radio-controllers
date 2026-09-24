@@ -33,6 +33,16 @@ impl IbusFrame {
     }
 }
 
+impl From<IbusFrame> for RxFrame {
+    fn from(ibus: IbusFrame) -> Self {
+        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
+        channels[..IbusFrame::CHANNEL_COUNT].copy_from_slice(&ibus.channels);
+
+        let status = RxLinkStatus::Ok;
+        Self { channels, status, rssi: 0 }
+    }
+}
+
 impl IbusFrame {
     /// The iBUS checksum is the one's complement of the sum of the first 30 bytes.
     /// Start with a value of 0xFFFF and subtract every byte from it.
@@ -68,17 +78,6 @@ impl IbusFrame {
         }
 
         Some(Self { channels })
-    }
-}
-
-impl From<IbusFrame> for RxFrame {
-    fn from(ibus: IbusFrame) -> Self {
-        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
-        channels[..IbusFrame::CHANNEL_COUNT].copy_from_slice(&ibus.channels);
-
-        let status = RxLinkStatus::Ok;
-        let rssi = 0;
-        Self { channels, status, rssi }
     }
 }
 

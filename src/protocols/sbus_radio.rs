@@ -1,24 +1,22 @@
-use crate::{
-    RxFrame, RxRadio, RxRadioCommon,
-    protocols::{RxProtocol, ibus_frame::IbusFrame, serial_radio::RadioSerial},
-};
+use super::{IbusFrame, RadioSerial, RxProtocol};
+use crate::{RxFrame, RxRadio, RxRadioCommon};
 
 /// Ibus radio<br><br>
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct IbusRadio {
+pub struct SbusRadio {
     common: RxRadioCommon,
     serial: RadioSerial,
     frame: IbusFrame,
 }
 
-impl Default for IbusRadio {
+impl Default for SbusRadio {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl IbusRadio {
+impl SbusRadio {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
@@ -26,7 +24,7 @@ impl IbusRadio {
     }
 }
 
-impl RxRadio for IbusRadio {
+impl RxRadio for SbusRadio {
     fn rx_frame(&self) -> RxFrame {
         RxFrame::default()
     }
@@ -35,7 +33,7 @@ impl RxRadio for IbusRadio {
     }
 }
 
-impl RxProtocol for IbusRadio {
+impl RxProtocol for SbusRadio {
     fn is_data_available(&self) -> bool {
         false
     }
@@ -64,11 +62,11 @@ mod tests {
 
     #[test]
     fn normal_types() {
-        is_full::<IbusRadio>();
+        is_full::<SbusRadio>();
     }
     #[test]
     fn new() {
-        let _radio = IbusRadio::new();
+        let _radio = SbusRadio::new();
         //assert!(radio.is_data_available());
     }
 }

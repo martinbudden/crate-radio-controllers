@@ -24,7 +24,6 @@ mod macros;
 
 mod controls;
 mod failsafe;
-mod mock_uart;
 mod protocols;
 mod rates;
 mod rc_adjustments;
@@ -36,10 +35,9 @@ mod rx_config;
 mod rx_frame;
 mod rx_radio;
 
-pub use crate::protocols::{CrsfRadio, IbusRadio, MockRadio};
+pub use crate::protocols::{CrsfRadio, IbusRadio, SbusRadio};
 pub use controls::{RcSticks, RxControlsPwm};
 pub use failsafe::{FailsafeConfig, FailsafeProcedure, FailsafeSwitchMode};
-pub use mock_uart::MockUart;
 pub use rates::{Rates, RatesConfig, RatesType, ThrottleLimitType};
 pub use rc_adjustments::{
     RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,

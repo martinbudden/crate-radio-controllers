@@ -66,7 +66,7 @@ pub enum RadioType {
     #[default]
     Crsf,
     Ibus,
-    Mock,
+    Sbus,
 }
 
 #[cfg(feature = "storage")]
@@ -80,7 +80,7 @@ impl RadioType {
         match value {
             0 => Self::Crsf,
             1 => Self::Ibus,
-            2 => Self::Mock,
+            2 => Self::Sbus,
             _ => Self::default(),
         }
     }

@@ -1,7 +1,5 @@
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RadioSerial {
-    //serial_port,
-    //serial_port_watcher:,
     pub packet_is_empty: bool,
     pub received_packet_count: u32,
     pub error_packet_count: i32,
@@ -22,15 +20,21 @@ impl RadioSerial {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
-    fn is_normal<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
 
     #[test]
     fn normal_types() {
-        is_normal::<RadioSerial>();
+        is_full::<RadioSerial>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn new() {
         let radio = RadioSerial::new();

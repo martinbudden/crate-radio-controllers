@@ -1,75 +1,6 @@
 #![allow(unused)]
-use crate::{RxChannel, RxFrame, RxLinkStatus};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct SbusFrame {
-    pub channels: [u16; Self::CHANNEL_COUNT],
-    pub flags: u8,
-    pub rssi: u8,
-}
-
-impl Default for SbusFrame {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl SbusFrame {
-    /// Deliberately no not support AUX13.
-    const _AUX13: u8 = 0x01;
-    /// Deliberately no not support AUX14.
-    const _AUX14: u8 = 0x02;
-    const FRAME_LOST: u8 = 0x04;
-    const FAILSAFE: u8 = 0x08;
-
-    pub const fn new() -> Self {
-        Self { channels: [0u16; Self::CHANNEL_COUNT], flags: 0, rssi: 0 }
-    }
-}
-
-impl SbusFrame {
-    // Forego channels AUX13 and AUX14, since we've limited CHANNEL_COUNT to 16,
-    // since no other protocols use more than 16 channels.
-    // channels[RxChannel::AUX13] = if frame.flags.aux13 { RxChannel::HIGH } else { RxChannel::LOW };
-    // channels[RxChannel::AUX14] = if frame.flags.aux14 { RxChannel::HIGH } else { RxChannel::LOW };
-    const CHANNEL_COUNT: usize = 16;
-
-    const PWM_LOW: u32 = 172;
-    const PWM_HIGH: u32 = 1811;
-    const PWM_RANGE: u32 = Self::PWM_HIGH - Self::PWM_LOW;
-
-    /// SBUS values typically range from 172 to 1811 (representing 1000µs to 2000µs),
-    /// so they need to be normalized to the standard PWM range `[1000,2000]`.
-    #[allow(clippy::cast_possible_truncation)]
-    pub fn normalize_channels(input: &[u16; Self::CHANNEL_COUNT]) -> [u16; Self::CHANNEL_COUNT] {
-        let mut output = [0u16; Self::CHANNEL_COUNT];
-
-        for (in_val, out_val) in input.iter().zip(output.iter_mut()) {
-            let val = u32::from(*in_val).clamp(Self::PWM_LOW, Self::PWM_HIGH);
-            *out_val = ((val - Self::PWM_LOW) * u32::from(RxChannel::RANGE) / (Self::PWM_RANGE)
-                + u32::from(RxChannel::LOW)) as u16;
-        }
-        output
-    }
-}
-
-impl From<SbusFrame> for RxFrame {
-    fn from(frame: SbusFrame) -> Self {
-        //let flags = SbusFlags::from_byte(raw_buffer[23]);
-        let status = if frame.flags & SbusFrame::FAILSAFE != 0 {
-            RxLinkStatus::Failsafe
-        } else if frame.flags & SbusFrame::FRAME_LOST != 0 {
-            RxLinkStatus::NoSignal
-        } else {
-            RxLinkStatus::Ok
-        };
-
-        let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
-        channels[..frame.channels.len()].copy_from_slice(&frame.channels);
-
-        Self { channels, status, rssi: frame.rssi }
-    }
-}
+use super::SbusFrame;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum ParserState {
@@ -82,7 +13,7 @@ enum ParserState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SbusParser {
+pub struct SbusParser {
     state: ParserState,
     buffer: [u8; Self::PACKET_LENGTH],
 }
@@ -94,9 +25,9 @@ impl Default for SbusParser {
 }
 
 impl SbusParser {
+    pub const PACKET_LENGTH: usize = 25;
     pub const HEADER_LENGTH: usize = 1;
     pub const PAYLOAD_LENGTH: usize = 22;
-    pub const PACKET_LENGTH: usize = 25;
 
     pub const fn new() -> Self {
         Self { state: ParserState::WaitingForHeader, buffer: [0u8; Self::PACKET_LENGTH] }
@@ -196,18 +127,21 @@ impl SbusParser {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_traits {
     use super::*;
 
-    fn is_normal<T: Sized + Send + Sync + Unpin>() {}
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
 
     #[test]
     fn normal_types() {
-        is_full::<SbusFrame>();
         is_full::<SbusParser>();
-        is_full::<ParserState>();
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn new() {
         let frame = SbusFrame::default();
