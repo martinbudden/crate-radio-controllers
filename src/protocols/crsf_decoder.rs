@@ -256,7 +256,6 @@ mod crsf_tests {
 
         // Create a fixed stack noise prefix array (6 bytes)
         let noise = [0x00, 0xC7, 0xC8, 0x02, 0x16, 0xFF]; // Includes a false start 0xC8
-
         let mut noisy_stream = [0u8; 6 + 26];
         noisy_stream[..6].copy_from_slice(&noise);
         noisy_stream[6..].copy_from_slice(&valid_packet);
