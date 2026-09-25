@@ -1,4 +1,4 @@
-use super::{IbusFrame, RadioSerial, RxProtocol};
+use super::{RadioSerial, RxProtocol, SbusDecoder, SbusFrame};
 use crate::{RxFrame, RxRadio, RxRadioCommon};
 
 /// Ibus radio<br><br>
@@ -7,7 +7,9 @@ use crate::{RxFrame, RxRadio, RxRadioCommon};
 pub struct SbusRadio {
     common: RxRadioCommon,
     serial: RadioSerial,
-    frame: IbusFrame,
+    frame: SbusFrame,
+    decoder: SbusDecoder,
+    rx_frame: RxFrame,
 }
 
 impl Default for SbusRadio {
@@ -20,16 +22,28 @@ impl SbusRadio {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self { common: RxRadioCommon::new(), serial: RadioSerial::new(), frame: IbusFrame::new() }
+        Self {
+            common: RxRadioCommon::new(),
+            serial: RadioSerial::new(),
+            frame: SbusFrame::new(),
+            decoder: SbusDecoder::new(),
+            rx_frame: RxFrame::new(),
+        }
     }
 }
 
 impl RxRadio for SbusRadio {
     fn rx_frame(&self) -> RxFrame {
-        RxFrame::default()
+        self.rx_frame
     }
     fn on_byte_received(&mut self, byte: u8) -> bool {
-        self.on_data_received_from_isr(byte)
+        let result = self.decoder.on_byte_received(byte);
+        if let Some(sbus_frame) = result {
+            self.rx_frame = RxFrame::from(sbus_frame);
+            true
+        } else {
+            false
+        }
     }
 }
 

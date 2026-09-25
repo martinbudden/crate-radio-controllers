@@ -27,7 +27,7 @@ mod failsafe;
 mod protocols;
 mod rates;
 mod rc_adjustments;
-mod rc_controls;
+mod rc_controls_config;
 mod rc_mode;
 mod rc_modes;
 mod rx_channel;
@@ -35,17 +35,20 @@ mod rx_config;
 mod rx_frame;
 mod rx_radio;
 
-pub use crate::protocols::{CrsfRadio, IBusDecoder, IbusRadio, SbusRadio};
+pub use crate::protocols::{CrsfRadio, IbusRadio, SbusRadio};
+
 pub use controls::{RcSticks, RxControlsPwm};
 pub use failsafe::{FailsafeConfig, FailsafeProcedure, FailsafeSwitchMode};
 pub use rates::{Rates, RatesConfig, RatesType, ThrottleLimitType};
+
 pub use rc_adjustments::{
     RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,
     RcTimedAdjustmentState,
 };
-pub use rc_controls::RcControlsConfig;
+pub use rc_controls_config::RcControlsConfig;
 pub use rc_mode::RcMode;
 pub use rc_modes::{ModeActivationCondition, RcModes};
+
 pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
 pub use rx_config::{RadioType, RxConfig};
 pub use rx_frame::{RxFrame, RxLinkStatus};

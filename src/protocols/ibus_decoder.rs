@@ -1,3 +1,5 @@
+use super::IbusFrame;
+
 /// Packet Structure (32 Bytes)
 /// Each packet contains 14 channels, each represented by a 16-bit value (2 bytes) in Little-Endian format.
 ///    Byte 0: Header 0x20 (Size)
@@ -5,120 +7,105 @@
 ///    Bytes 2–29: 14 Channels (2 bytes each, Little-Endian)
 ///    Bytes 30–31: Checksum (2 bytes, Little-Endian).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum IBusDecoderState {
+enum State {
     #[default]
     WaitForSizeByte,
     WaitForCommandByte,
     ReadPayload {
         buffer: [u8; Self::BUFFER_SIZE],
-        idx: usize,
+        index: usize,
         checksum: u16,
     },
     ValidateChecksum {
         buffer: [u8; Self::BUFFER_SIZE],
         checksum: u16,
-        is_high_byte: bool, // false = waiting for low byte, true = waiting for high byte
-        checksum_low: u8,
+        is_first_byte: bool,
+        checksum_first_byte: u8,
     },
 }
 
-impl IBusDecoderState {
+impl State {
     const SIZE_BYTE: u8 = 0x20;
     const COMMAND_BYTE: u8 = 0x40;
-    const BUFFER_SIZE: usize = IBusDecoder::CHANNEL_COUNT * 2;
+    const BUFFER_SIZE: usize = IbusDecoder::CHANNEL_COUNT * 2;
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct IBusDecoder {
-    state: IBusDecoderState,
+pub struct IbusDecoder {
+    state: State,
     channels: [u16; Self::CHANNEL_COUNT],
 }
 
-impl IBusDecoder {
+impl IbusDecoder {
     pub const CHANNEL_COUNT: usize = 14;
-    pub const THROTTLE_CHANNEL: usize = 2;
 
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            state: IBusDecoderState::WaitForSizeByte,
-            channels: [1000; Self::CHANNEL_COUNT], // Default fallback value
-        }
+        Self { state: State::WaitForSizeByte, channels: [1000; Self::CHANNEL_COUNT] }
     }
 }
 
-impl IBusDecoder {
+impl IbusDecoder {
     /// Processes a single byte incoming from the UART interface.
     /// Returns `Some(&[u16; 14])` only when a valid frame passes checksum validation.
-    pub fn on_byte_received(&mut self, byte: u8) -> Option<&[u16; Self::CHANNEL_COUNT]> {
-        let current_state = core::mem::replace(&mut self.state, IBusDecoderState::WaitForSizeByte);
+    pub fn on_byte_received(&mut self, byte: u8) -> Option<IbusFrame> {
+        let mut complete = false;
 
-        match current_state {
-            IBusDecoderState::WaitForSizeByte => {
-                if byte == IBusDecoderState::SIZE_BYTE {
-                    self.state = IBusDecoderState::WaitForCommandByte;
+        self.state = match core::mem::take(&mut self.state) {
+            State::WaitForSizeByte => {
+                if byte == State::SIZE_BYTE {
+                    State::WaitForCommandByte
                 } else {
-                    self.state = IBusDecoderState::WaitForSizeByte;
+                    State::WaitForSizeByte
                 }
             }
-            IBusDecoderState::WaitForCommandByte => {
-                if byte == IBusDecoderState::COMMAND_BYTE {
-                    // Start computing the checksum: 0xFFFF - 0x20 - 0x40 = 0xFF9F
-                    let checksum =
-                        0xFFFF - u16::from(IBusDecoderState::SIZE_BYTE) - u16::from(IBusDecoderState::COMMAND_BYTE);
-                    self.state =
-                        IBusDecoderState::ReadPayload { buffer: [0; IBusDecoderState::BUFFER_SIZE], idx: 0, checksum };
+            State::WaitForCommandByte => {
+                if byte == State::COMMAND_BYTE {
+                    // The iBUS checksum is the one's complement of the sum of the first 30 bytes.
+                    // Start with a value of 0xFFFF and subtract every byte from it.
+                    // So we subtract the size and command bytes here.
+                    let checksum = 0xFFFF - u16::from(State::SIZE_BYTE) - u16::from(State::COMMAND_BYTE);
+                    State::ReadPayload { buffer: [0; State::BUFFER_SIZE], index: 0, checksum }
                 } else {
-                    self.state = IBusDecoderState::WaitForSizeByte;
+                    State::WaitForSizeByte
                 }
             }
-            IBusDecoderState::ReadPayload { mut buffer, idx, mut checksum } => {
+            State::ReadPayload { mut buffer, index, mut checksum } => {
                 checksum -= u16::from(byte);
-                buffer[idx] = byte;
-                let next_idx = idx + 1;
+                buffer[index] = byte;
+                let index = index + 1;
 
-                if next_idx >= buffer.len() {
-                    self.state =
-                        IBusDecoderState::ValidateChecksum { buffer, checksum, is_high_byte: false, checksum_low: 0 };
+                if index >= buffer.len() {
+                    State::ValidateChecksum { buffer, checksum, is_first_byte: true, checksum_first_byte: 0 }
                 } else {
-                    self.state = IBusDecoderState::ReadPayload { buffer, idx: next_idx, checksum };
+                    State::ReadPayload { buffer, index, checksum }
                 }
             }
-            IBusDecoderState::ValidateChecksum { buffer, checksum, is_high_byte, checksum_low } => {
-                if is_high_byte {
-                    // Captured the final high byte.
+            State::ValidateChecksum { buffer, checksum, is_first_byte, checksum_first_byte: checksum_low } => {
+                if is_first_byte {
+                    State::ValidateChecksum { buffer, checksum, is_first_byte: false, checksum_first_byte: byte }
+                } else {
+                    // Captured the second byte.
                     let checksum_received = u16::from_le_bytes([checksum_low, byte]);
-
-                    // Reset state to WaitLength for the next packet.
-                    // This happens regardless of whether the checksum succeeds or fails.
-                    self.state = IBusDecoderState::WaitForSizeByte;
-
                     if checksum == checksum_received {
-                        self.parse_channels_from_buffer(&buffer);
-                        return Some(&self.channels);
+                        complete = true;
+                        // .as_chunks::<2>().0 gives a slice of [u8; 2] arrays
+                        for (ii, &chunk) in buffer.as_chunks::<2>().0.iter().enumerate() {
+                            self.channels[ii] = u16::from_le_bytes(chunk);
+                        }
                     }
-                } else {
-                    // Captured the low byte, now shift to wait for the high byte
-                    self.state =
-                        IBusDecoderState::ValidateChecksum { buffer, checksum, is_high_byte: true, checksum_low: byte };
+                    // Reset state to WaitForSizeByte for the next packet.
+                    // This happens regardless of whether the checksum succeeds or fails.
+                    State::WaitForSizeByte
                 }
             }
+        };
+        if complete {
+            let ibus_frame = IbusFrame { channels: self.channels };
+            Some(ibus_frame)
+        } else {
+            None
         }
-        None
-    }
-
-    /// Internal helper to parse the raw 28 bytes into 14 channels.
-    fn parse_channels_from_buffer(&mut self, buffer: &[u8; IBusDecoderState::BUFFER_SIZE]) {
-        // .as_chunks::<2>().0 gives a slice of [u8; 2] arrays
-        for (ii, &chunk) in buffer.as_chunks::<2>().0.iter().enumerate() {
-            self.channels[ii] = u16::from_le_bytes(chunk);
-        }
-    }
-
-    /// Failsafe check (checks if throttle channel drops below 950).
-    #[must_use]
-    pub fn is_receiver_failsafe(&self) -> bool {
-        self.channels[Self::THROTTLE_CHANNEL] < 950
     }
 }
 
@@ -130,23 +117,25 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full_eq::<IBusDecoderState>();
-        is_full_eq::<IBusDecoder>();
+        is_full_eq::<State>();
+        is_full_eq::<IbusDecoder>();
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{RxFrame, RxLinkStatus};
+
     use super::*;
 
     /// Helper function to build a valid IBUS frame array
-    fn create_valid_frame(channel_values: [u16; IBusDecoder::CHANNEL_COUNT]) -> [u8; 32] {
+    fn create_valid_frame(channel_values: [u16; IbusDecoder::CHANNEL_COUNT]) -> [u8; 32] {
         let mut frame = [0u8; 32];
         frame[0] = 0x20; // Length
         frame[1] = 0x40; // Command type
 
         // Inject the channel values as Little Endian bytes
-        for i in 0..IBusDecoder::CHANNEL_COUNT {
+        for i in 0..IbusDecoder::CHANNEL_COUNT {
             let offset = 2 + (i * 2);
             let bytes = channel_values[i].to_le_bytes();
             frame[offset] = bytes[0];
@@ -168,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_successful_decode() {
-        let mut decoder = IBusDecoder::new();
+        let mut decoder = IbusDecoder::new();
 
         // 1. Establish an arbitrary set of healthy receiver channel mappings
         let input_channels = [
@@ -187,16 +176,17 @@ mod tests {
 
         // 3. Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
-        let output_channels = result.unwrap();
+        let ibus_frame = result.unwrap();
 
-        assert_eq!(output_channels, &input_channels, "Decoded values do not match original inputs");
-        assert!(!decoder.is_receiver_failsafe(), "Decoder incorrectly flagged a healthy signal as a failsafe!");
+        assert_eq!(ibus_frame.channels, input_channels, "Decoded values do not match original inputs");
+        let rx_frame = RxFrame::from(ibus_frame);
+        assert!(rx_frame.status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
     }
 
     #[test]
     fn test_corrupted_checksum_rejection() {
-        let mut decoder = IBusDecoder::new();
-        let input_channels = [1500; IBusDecoder::CHANNEL_COUNT];
+        let mut decoder = IbusDecoder::new();
+        let input_channels = [1500; IbusDecoder::CHANNEL_COUNT];
         let mut raw_stream = create_valid_frame(input_channels);
 
         // Corrupt a middle payload byte (byte index 5)
@@ -213,8 +203,8 @@ mod tests {
 
     #[test]
     fn test_invalid_header_recovery() {
-        let mut decoder = IBusDecoder::new();
-        let input_channels = [1500; IBusDecoder::CHANNEL_COUNT];
+        let mut decoder = IbusDecoder::new();
+        let input_channels = [1500; IbusDecoder::CHANNEL_COUNT];
         let valid_stream = create_valid_frame(input_channels);
 
         // Define our fixed noise sequence (6 bytes)
@@ -227,30 +217,30 @@ mod tests {
         noisy_stream[..6].copy_from_slice(&noise);
         noisy_stream[6..].copy_from_slice(&valid_stream);
 
-        let mut decoded_channels = None;
+        let mut decoded_frame = None;
 
         for &byte in noisy_stream.iter() {
             // By dereferencing or cloning the value inside the if-let,
             // we release the borrow on `decoder` immediately.
-            if let Some(&channels) = decoder.on_byte_received(byte) {
-                decoded_channels = Some(channels);
+            if let Some(ibus_frame) = decoder.on_byte_received(byte) {
+                decoded_frame = Some(ibus_frame);
             }
         }
 
-        assert!(decoded_channels.is_some(), "Decoder failed to sync and recover after receiving noise!");
+        assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
         assert_eq!(
-            decoded_channels.unwrap(),
-            [1500; IBusDecoder::CHANNEL_COUNT],
+            decoded_frame.unwrap().channels,
+            [1500; IbusDecoder::CHANNEL_COUNT],
             "Recovered packet contained bad channel data"
         );
     }
 
     #[test]
     fn test_receiver_failsafe_detection() {
-        let mut decoder = IBusDecoder::new();
+        let mut decoder = IbusDecoder::new();
 
         // Emulate typical radio-link failure values where throttle (Channel 3) drops below 950
-        let mut failsafe_channels = [1500; IBusDecoder::CHANNEL_COUNT];
+        let mut failsafe_channels = [1500; IbusDecoder::CHANNEL_COUNT];
         failsafe_channels[2] = 900; // Drop channel 3 below 950 boundary
 
         let raw_stream = create_valid_frame(failsafe_channels);
@@ -261,6 +251,11 @@ mod tests {
         }
 
         assert!(result.is_some());
-        assert!(decoder.is_receiver_failsafe(), "Decoder failed to identify internal receiver link failure!");
+        let ibus_frame = result.unwrap();
+        let rx_frame = RxFrame::from(ibus_frame);
+        assert!(
+            rx_frame.status == RxLinkStatus::Failsafe,
+            "Decoder failed to identify internal receiver link failure!"
+        );
     }
 }

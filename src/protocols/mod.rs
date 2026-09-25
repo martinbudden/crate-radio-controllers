@@ -8,6 +8,7 @@ mod ibus_decoder;
 mod ibus_frame;
 mod ibus_radio;
 
+mod sbus_decoder;
 mod sbus_frame;
 mod sbus_parser;
 mod sbus_radio;
@@ -19,12 +20,13 @@ mod protocol;
 pub(crate) use crc_dvb_s2::CrcDvbS2;
 pub(crate) use crsf_frame::CrsfFrame;
 pub(crate) use crsf_parser::CrsfParser;
+pub(crate) use ibus_decoder::IbusDecoder;
 pub(crate) use ibus_frame::IbusFrame;
+pub(crate) use sbus_decoder::SbusDecoder;
 pub(crate) use sbus_frame::SbusFrame;
 
 pub use crsf_radio::CrsfRadio;
 
-pub use ibus_decoder::IBusDecoder;
 pub use ibus_radio::IbusRadio;
 pub use sbus_radio::SbusRadio;
 

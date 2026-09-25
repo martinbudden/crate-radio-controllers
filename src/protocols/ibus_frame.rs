@@ -26,6 +26,7 @@ impl Default for IbusFrame {
 impl IbusFrame {
     pub const CHANNEL_COUNT: usize = 14;
     pub const PACKET_LENGTH: usize = 32;
+    const THROTTLE_CHANNEL: usize = 2;
 
     /// Constructor.
     pub const fn new() -> Self {
@@ -38,7 +39,9 @@ impl From<IbusFrame> for RxFrame {
         let mut channels = [Self::DEFAULT_CHANNEL_VALUE; Self::MAX_CHANNEL_COUNT];
         channels[..IbusFrame::CHANNEL_COUNT].copy_from_slice(&ibus.channels);
 
-        let status = RxLinkStatus::Ok;
+        // Failsafe check (checks if throttle channel drops below 950).
+        let status =
+            if channels[IbusFrame::THROTTLE_CHANNEL] < 950 { RxLinkStatus::Failsafe } else { RxLinkStatus::Ok };
         Self { channels, status, rssi: 0 }
     }
 }
