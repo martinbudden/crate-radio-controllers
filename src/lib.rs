@@ -35,7 +35,7 @@ mod rx_config;
 mod rx_frame;
 mod rx_radio;
 
-pub use crate::protocols::{CrsfRadio, IbusRadio, SbusRadio};
+pub use crate::protocols::{CrsfRadio, IBusDecoder, IbusRadio, SbusRadio};
 pub use controls::{RcSticks, RxControlsPwm};
 pub use failsafe::{FailsafeConfig, FailsafeProcedure, FailsafeSwitchMode};
 pub use rates::{Rates, RatesConfig, RatesType, ThrottleLimitType};

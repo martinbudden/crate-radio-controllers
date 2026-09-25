@@ -4,6 +4,7 @@ mod crsf_frame;
 mod crsf_parser;
 mod crsf_radio;
 
+mod ibus_decoder;
 mod ibus_frame;
 mod ibus_radio;
 
@@ -23,6 +24,7 @@ pub(crate) use sbus_frame::SbusFrame;
 
 pub use crsf_radio::CrsfRadio;
 
+pub use ibus_decoder::IBusDecoder;
 pub use ibus_radio::IbusRadio;
 pub use sbus_radio::SbusRadio;
 
