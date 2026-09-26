@@ -3,7 +3,7 @@ use super::CrcDvbS2;
 use crate::RxChannels;
 
 /// `CrsfPacket` is represented as an enum, as per Rust idiom.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CrsfPacket {
     Channels(RxChannels),
     LinkStatistics {
@@ -20,7 +20,7 @@ pub enum CrsfPacket {
 
 pub type CrsfPayload = [u8; CrsfParser::PACKET_LENGTH];
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct CrsfParser {}
 
 impl CrsfParser {
@@ -174,7 +174,7 @@ impl CrsfParser {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CrsfLinkStatistics {
     pub uplink_rssi_dbm: i8, // Usually -30 to -120
     pub uplink_lq: u8,       // 0 - 100

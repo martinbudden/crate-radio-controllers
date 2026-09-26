@@ -49,7 +49,7 @@ pub use rc_controls_config::RcControlsConfig;
 pub use rc_mode::RcMode;
 pub use rc_modes::{ModeActivationCondition, RcModes};
 
-pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
+pub use rx_channel::{RxChannel, RxChannelRange};
 pub use rx_config::{RadioType, RxConfig};
-pub use rx_frame::{RxChannelsLink, RxFrame, RxFrameType, RxLinkStatus};
+pub use rx_frame::{RxChannels, RxChannelsLinkStatus, RxFrame, RxFrameType, RxLinkStatus};
 pub use rx_radio::{Radio, RxRadio};

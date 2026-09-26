@@ -1,4 +1,4 @@
-use crate::{RxChannelsLink, RxFrame, RxLinkStatus};
+use crate::{RxChannelsLinkStatus, RxFrame, RxLinkStatus};
 
 /// The iBUS protocol (by FlySky/Turnigy).
 /// It is not inverted and uses a straightforward "Sum of Bytes" checksum.
@@ -102,14 +102,14 @@ impl IbusDecoder {
         if complete {
             const THROTTLE_CHANNEL: usize = 2;
 
-            let mut channels = [0u16; RxChannelsLink::CHANNEL_COUNT];
+            let mut channels = [0u16; RxChannelsLinkStatus::CHANNEL_COUNT];
             // .as_chunks::<2>().0 gives a slice of [u8; 2] arrays
             for (ii, &chunk) in self.buffer.as_chunks::<2>().0.iter().enumerate() {
                 channels[ii] = u16::from_le_bytes(chunk);
             }
             let link_status = if channels[THROTTLE_CHANNEL] < 950 { RxLinkStatus::Failsafe } else { RxLinkStatus::Ok };
 
-            let channels_link = RxChannelsLink { channels, link_status };
+            let channels_link = RxChannelsLinkStatus { channels, link_status };
             Some(RxFrame::ChannelsLink { channels_link })
         } else {
             None

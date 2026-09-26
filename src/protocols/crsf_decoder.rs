@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::{RxChannelsLink, RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannelsLinkStatus, RxFrame, RxFrameType, RxLinkStatus};
 
 use super::CrcDvbS2;
 
@@ -109,13 +109,13 @@ impl CrsfDecoder {
         };
 
         if complete {
-            let mut channels = [0; RxChannelsLink::CHANNEL_COUNT];
+            let mut channels = [0; RxChannelsLinkStatus::CHANNEL_COUNT];
             let frame_type = self.buffer[0];
             if frame_type == RxFrameType::RcChannels as u8 {
                 if let Ok(channel_data) = self.buffer[1..23].try_into() {
                     Self::parse_rc_channels(&mut channels, channel_data);
                     let link_status = RxLinkStatus::Ok;
-                    let channels_link = RxChannelsLink { channels, link_status };
+                    let channels_link = RxChannelsLinkStatus { channels, link_status };
 
                     return Some(RxFrame::ChannelsLink { channels_link });
                 }

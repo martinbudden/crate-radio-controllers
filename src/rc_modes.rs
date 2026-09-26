@@ -1,4 +1,4 @@
-use super::{RcMode, RxChannel, RxChannelRange, RxChannelsLink};
+use super::{RcMode, RxChannel, RxChannelRange, RxChannels};
 
 use simple_bitset::BitSet64;
 
@@ -85,10 +85,10 @@ impl ModeActivationCondition {
     }
     #[must_use]
     #[inline]
-    pub fn is_active(&self, rx_frame: &RxChannelsLink) -> bool {
+    pub fn is_active(&self, channels: &RxChannels) -> bool {
         //let channel_value: u16 = rx_frame.auxiliary_channel(self.aux_channel_index);
         //RxChannelRange::is_range_active(channel_value, self.range.start, self.range.end)
-        self.range.is_active(rx_frame, self.aux_channel_index)
+        self.range.is_active(channels, self.aux_channel_index)
     }
 }
 
@@ -315,7 +315,7 @@ impl RcModes {
 
     /// Updates the activated modes using the `RxFrame` values and the mode activation conditions.
     /// `analyze_macs` must have been called before this function is called.
-    pub fn update_activated_modes(&mut self, rx_frame: &RxChannelsLink) {
+    pub fn update_activated_modes(&mut self, rx_channels: &RxChannels) {
         let mut new_bitset = BitSet64::default();
         let mut and_bitset = BitSet64::default();
         let mut sticky_modes = BitSet64::default();
@@ -324,7 +324,7 @@ impl RcModes {
         // Determine which conditions set/clear the mode.
         for mac in &self.macs[..self.active_mac_count] {
             if sticky_modes.test(mac.mode_id) {
-                let range_is_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
+                let range_is_active = mac.range.is_active(rx_channels, mac.aux_channel_index);
                 Self::update_masks_for_sticky_modes(
                     self.active_modes,
                     &mut self.sticky_modes_was_ever_disabled,
@@ -334,7 +334,7 @@ impl RcModes {
                     range_is_active,
                 );
             } else if mac.mode_id < RcMode::COUNT {
-                let range_is_active = mac.range.is_active(rx_frame, mac.aux_channel_index);
+                let range_is_active = mac.range.is_active(rx_channels, mac.aux_channel_index);
                 Self::update_masks_for_mac(*mac, &mut and_bitset, &mut new_bitset, range_is_active);
             }
         }
@@ -381,8 +381,9 @@ mod test_traits {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::panic)]
-
     use super::*;
+    use crate::RxChannelsLinkStatus;
+
     #[test]
     fn test_new() {
         let rc_modes = RcModes::default();
@@ -407,18 +408,18 @@ mod tests {
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
-        let mut rx_frame = RxChannelsLink::default();
+        let mut rx_frame = RxChannelsLinkStatus::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;
         let channel_value: u16 = rx_frame.channel(mac_arm.aux_channel_index);
         assert_eq!(1750, channel_value);
 
-        assert!(mac_arm.is_active(&rx_frame));
-        assert!(mac_arm.range.is_active(&rx_frame, mac_arm.aux_channel_index));
+        assert!(mac_arm.is_active(&rx_frame.channels));
+        assert!(mac_arm.range.is_active(&rx_frame.channels, mac_arm.aux_channel_index));
 
         rx_frame.channels[RxChannel::AUX2] = 1125;
-        assert!(mac_angle.is_active(&rx_frame));
+        assert!(mac_angle.is_active(&rx_frame.channels));
 
-        rc_modes.update_activated_modes(&rx_frame);
+        rc_modes.update_activated_modes(&rx_frame.channels);
         assert!(rc_modes.is_mode_active(RcMode::ARM));
         assert!(rc_modes.is_mode_active(RcMode::ANGLE));
         assert!(!rc_modes.is_mode_active(RcMode::ALTITUDE_HOLD));
@@ -436,12 +437,12 @@ mod tests {
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
-        let mut rx_frame = RxChannelsLink::default();
+        let mut rx_frame = RxChannelsLinkStatus::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;
 
         rx_frame.channels[RxChannel::AUX2] = 1125;
 
-        rc_modes.update_activated_modes(&rx_frame);
+        rc_modes.update_activated_modes(&rx_frame.channels);
         assert!(rc_modes.is_mode_active(RcMode::ARM));
         assert!(rc_modes.is_mode_active(RcMode::ANGLE));
         assert!(!rc_modes.is_mode_active(RcMode::ALTITUDE_HOLD));

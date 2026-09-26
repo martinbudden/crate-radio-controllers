@@ -67,7 +67,7 @@ impl RxFrameType {
 }
 
 /// Status of radio link.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RxLinkStatus {
     #[default]
     Ok,
@@ -91,7 +91,7 @@ impl RxLinkStatus {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RxFrame {
     ChannelsLink {
-        channels_link: RxChannelsLink,
+        channels_link: RxChannelsLinkStatus,
     },
     LinkStatisticsTx {
         rssi_dbm: u8,
@@ -121,23 +121,24 @@ pub struct RxFrameOld {
 }*/
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxChannelsLink {
-    pub channels: [u16; Self::CHANNEL_COUNT],
+pub struct RxChannelsLinkStatus {
+    pub channels: RxChannels,
     pub link_status: RxLinkStatus,
 }
 
-impl Default for RxChannelsLink {
+impl Default for RxChannelsLinkStatus {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RxChannelsLink {
+impl RxChannelsLinkStatus {
     // SBUS has 18 channels (the last two are digital channels with the two values 1000 or 2000), but we only use 16.
     // IBUS has 14 channels
     // CRSF has 16 channels
     pub const CHANNEL_COUNT: usize = 16;
     pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
+
     pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::CHANNEL_COUNT] = [
         RxChannel::MID, // Sticks default to MID.
         RxChannel::MID,
@@ -164,7 +165,7 @@ impl RxChannelsLink {
     }
 }
 
-impl RxChannelsLink {
+impl RxChannelsLinkStatus {
     /// Returns true if the frame is safe to use for flight control.
     #[must_use]
     pub fn is_valid(&self) -> bool {
@@ -183,6 +184,10 @@ impl RxChannelsLink {
         self.channels = Self::FAILSAFE_CHANNEL_VALUES;
     }
 }
+
+/// Array of RX channels.
+pub type RxChannels = [u16; RxChannelsLinkStatus::CHANNEL_COUNT];
+
 #[cfg(test)]
 mod test_traits {
     use super::*;
@@ -191,7 +196,7 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full::<RxChannelsLink>();
+        is_full::<RxChannelsLinkStatus>();
         is_full::<RxLinkStatus>();
     }
 }

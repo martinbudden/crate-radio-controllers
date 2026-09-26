@@ -1,4 +1,4 @@
-use crate::{RxChannel, RxChannelsLink};
+use crate::{RxChannel, RxChannels};
 
 /// Control values from receiver scaled to the range `[-1.0, 1.0]`.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -9,14 +9,14 @@ pub struct RcSticks {
     pub throttle: f32,
 }
 
-impl From<RxChannelsLink> for RcSticks {
-    fn from(frame: RxChannelsLink) -> Self {
+impl From<RxChannels> for RcSticks {
+    fn from(channels: RxChannels) -> Self {
         // Map channels in range [1000,2000] to floats in range [0,1] for throttle, [-1,1] for roll, pitch yaw
         RcSticks {
-            roll: (f32::from(frame.channels[RxChannel::ROLL]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            pitch: (f32::from(frame.channels[RxChannel::PITCH]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            yaw: (f32::from(frame.channels[RxChannel::YAW]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            throttle: (f32::from(frame.channels[RxChannel::THROTTLE]) - RxChannel::LOW_F32) / RxChannel::RANGE_F32,
+            roll: (f32::from(channels[RxChannel::ROLL]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            pitch: (f32::from(channels[RxChannel::PITCH]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            yaw: (f32::from(channels[RxChannel::YAW]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            throttle: (f32::from(channels[RxChannel::THROTTLE]) - RxChannel::LOW_F32) / RxChannel::RANGE_F32,
         }
     }
 }
@@ -105,25 +105,25 @@ mod tests {
         assert_eq!(0.0, controls.throttle);
     }
     #[test]
-    fn from_rx_frame() {
-        let mut rx_frame = RxChannelsLink::new();
-        rx_frame.channels[RxChannel::ROLL] = 1250;
-        rx_frame.channels[RxChannel::PITCH] = 1500;
-        rx_frame.channels[RxChannel::YAW] = 1750;
-        rx_frame.channels[RxChannel::THROTTLE] = 1000;
+    fn from_rx_channels() {
+        let mut channels = RxChannels::default();
+        channels[RxChannel::ROLL] = 1250;
+        channels[RxChannel::PITCH] = 1500;
+        channels[RxChannel::YAW] = 1750;
+        channels[RxChannel::THROTTLE] = 1000;
 
         // maps [1000, 2000] to [-1.0, 1.0] for roll, pitch, yaw, [0.0, 1.0] for throttle
-        let rc_sticks = RcSticks::from(rx_frame);
+        let rc_sticks = RcSticks::from(channels);
         assert_eq!(-0.5, rc_sticks.roll);
         assert_eq!(0.0, rc_sticks.pitch);
         assert_eq!(0.5, rc_sticks.yaw);
         assert_eq!(0.0, rc_sticks.throttle);
 
-        rx_frame.channels[RxChannel::THROTTLE] = 1250;
-        let rc_sticks = RcSticks::from(rx_frame);
+        channels[RxChannel::THROTTLE] = 1250;
+        let rc_sticks = RcSticks::from(channels);
         assert_eq!(0.25, rc_sticks.throttle);
-        rx_frame.channels[RxChannel::THROTTLE] = 1750;
-        let rc_sticks = RcSticks::from(rx_frame);
+        channels[RxChannel::THROTTLE] = 1750;
+        let rc_sticks = RcSticks::from(channels);
         assert_eq!(0.75, rc_sticks.throttle);
     }
 }

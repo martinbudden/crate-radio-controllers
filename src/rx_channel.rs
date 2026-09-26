@@ -1,4 +1,4 @@
-use super::RxChannelsLink;
+use super::RxChannels;
 
 #[cfg(feature = "storage")]
 use sequential_storage::map::PostcardValue;
@@ -9,7 +9,7 @@ use {
 };
 
 /// RX channel constants.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RxChannel {}
 
 #[allow(missing_docs)]
@@ -91,9 +91,6 @@ impl RxChannel {
         i32::from(pwm) - 1000
     }
 }
-
-/// Array of RX channels.
-pub type RxChannels = [u16; RxChannelsLink::CHANNEL_COUNT];
 
 /// PWM channels are divided into "steps". Steps are 25 units wide<br>
 /// There are 48 steps between 900 and 2100.<br>
@@ -195,8 +192,10 @@ impl RxChannelRange {
 
     #[must_use]
     #[inline]
-    pub fn is_active(&self, rx_frame: &RxChannelsLink, aux_channel_index: u8) -> bool {
-        let channel_value: u16 = rx_frame.channel(aux_channel_index);
+    pub fn is_active(&self, rx_channels: &RxChannels, aux_channel_index: u8) -> bool {
+        let index = usize::from(aux_channel_index);
+        let channel_value = if index < rx_channels.len() { rx_channels[index] } else { RxChannel::LOW };
+
         Self::is_range_active(channel_value, self.start, self.end)
     }
     /*#[must_use]
