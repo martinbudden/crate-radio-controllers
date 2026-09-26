@@ -6,7 +6,6 @@ use crate::{RxFrame, RxRadio};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct IbusRadio {
     decoder: IbusDecoder,
-    rx_frame: RxFrame,
 }
 
 impl Default for IbusRadio {
@@ -19,14 +18,11 @@ impl IbusRadio {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self { decoder: IbusDecoder::new(), rx_frame: RxFrame::new() }
+        Self { decoder: IbusDecoder::new() }
     }
 }
 
 impl RxRadio for IbusRadio {
-    fn rx_frame(&self) -> RxFrame {
-        self.rx_frame
-    }
     fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
         self.decoder.on_byte_received(byte)
     }

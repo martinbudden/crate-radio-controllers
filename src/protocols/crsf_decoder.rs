@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::{RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannelsLink, RxFrame, RxFrameType, RxLinkStatus};
 
 use super::CrcDvbS2;
 
@@ -109,32 +109,44 @@ impl CrsfDecoder {
         };
 
         if complete {
-            let mut channels = [0; RxFrame::MAX_CHANNEL_COUNT];
+            let mut channels = [0; RxChannelsLink::CHANNEL_COUNT];
             let frame_type = self.buffer[0];
             if frame_type == RxFrameType::RcChannels as u8 {
                 if let Ok(channel_data) = self.buffer[1..23].try_into() {
                     Self::parse_rc_channels(&mut channels, channel_data);
-                    // TODO: check RxLinkStatus for CRSF
                     let link_status = RxLinkStatus::Ok;
-                    let rx_frame = RxFrame { channels, frame_type: RxFrameType::RcChannels, link_status, rssi: 0 };
+                    let channels_link = RxChannelsLink { channels, link_status };
 
-                    return Some(rx_frame);
+                    return Some(RxFrame::ChannelsLink { channels_link });
                 }
-            } else {
-                // TODO: check RxLinkStatus for CRSF
-                let frame_type = RxFrameType::from_u8(frame_type);
-                let link_status = RxLinkStatus::Ok;
-                let rx_frame = RxFrame { channels, frame_type, link_status, rssi: 0 };
-
-                return Some(rx_frame);
+                return None;
             }
+            let frame_type = RxFrameType::from_u8(frame_type);
+            let rx_frame = match frame_type {
+                RxFrameType::Heartbeat => Some(RxFrame::Heartbeat()),
+                RxFrameType::LinkStatisticsTx => Some(RxFrame::LinkStatisticsTx {
+                    rssi_dbm: self.buffer[1],
+                    rssi_percent: self.buffer[2],
+                    link_quality: self.buffer[3],
+                    snr: self.buffer[4].cast_signed(),
+                }),
+                RxFrameType::BatterySensor => {
+                    // Battery (Type 0x08)
+                    // Big-Endian packing: [Volt High] [Volt Low] [Curr High] [Curr Low] ...
+                    let voltage = u16::from_be_bytes([self.buffer[1], self.buffer[2]]);
+                    let current = u16::from_be_bytes([self.buffer[3], self.buffer[4]]);
+                    Some(RxFrame::Battery { voltage, current })
+                }
+
+                _ => Some(RxFrame::Unknown { frame_type: self.buffer[0] }),
+            };
         }
 
         None
     }
 
-    /// Fast 32-bit overlapping window channel extraction (leveraging your optimized SBUS pipeline).
-    fn parse_rc_channels(channels: &mut [u16; Self::CHANNEL_COUNT], payload: &[u8; Self::RC_PACKET_LENGTH]) {
+    /// Fast 32-bit overlapping window channel extraction.
+    pub fn parse_rc_channels(channels: &mut [u16; Self::CHANNEL_COUNT], payload: &[u8; Self::RC_PACKET_LENGTH]) {
         let chunks = payload.as_chunks::<11>().0;
 
         Self::parse_8_rc_channels(&mut channels[0..8], &chunks[0]);
@@ -175,6 +187,8 @@ mod test_traits {
 
 #[cfg(test)]
 mod crsf_tests {
+    use crate::rx_frame;
+
     use super::*; // Assumes CrsfDecoder, CrsfFrame, and CRSF_PAYLOAD_LEN are in scope
 
     /// Standard CRSF CRC8 implementation (DVB-S2 variant, polynomial 0xD5)
@@ -251,10 +265,17 @@ mod crsf_tests {
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
         let output_frame = result.unwrap();
 
-        assert_eq!(
-            output_frame.channels, input_channels,
-            "Decoded values do not match original 11-bit input boundaries!"
-        );
+        match output_frame {
+            RxFrame::ChannelsLink { channels_link } => {
+                assert_eq!(
+                    channels_link.channels, input_channels,
+                    "Decoded values do not match original 11-bit input boundaries!"
+                );
+            }
+            _ => {
+                panic!("decoded to wrong frame type")
+            }
+        }
     }
 
     #[test]
@@ -297,6 +318,14 @@ mod crsf_tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to re-sync and recover after stream noise!");
-        assert_eq!(decoded_frame.unwrap().channels, [1500; 16]);
+        let rx_frame = decoded_frame.unwrap();
+        match rx_frame {
+            RxFrame::ChannelsLink { channels_link } => {
+                assert_eq!(channels_link.channels, [1500; 16]);
+            }
+            _ => {
+                panic!("decoded to wrong frame type")
+            }
+        }
     }
 }

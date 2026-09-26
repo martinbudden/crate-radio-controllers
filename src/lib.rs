@@ -51,5 +51,5 @@ pub use rc_modes::{ModeActivationCondition, RcModes};
 
 pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
 pub use rx_config::{RadioType, RxConfig};
-pub use rx_frame::{RxFrame, RxFrameType, RxLinkStatus};
+pub use rx_frame::{RxChannelsLink, RxFrame, RxFrameType, RxLinkStatus};
 pub use rx_radio::{Radio, RxRadio};

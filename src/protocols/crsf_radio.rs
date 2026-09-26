@@ -60,9 +60,6 @@ impl CrsfRadio {
 }
 
 impl RxRadio for CrsfRadio {
-    fn rx_frame(&self) -> RxFrame {
-        RxFrame::default()
-    }
     fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
         self.decoder.on_byte_received(byte)
     }

@@ -1,4 +1,4 @@
-use super::RxFrame;
+use super::RxChannelsLink;
 
 #[cfg(feature = "storage")]
 use sequential_storage::map::PostcardValue;
@@ -93,7 +93,7 @@ impl RxChannel {
 }
 
 /// Array of RX channels.
-pub type RxChannels = [u16; RxFrame::MAX_CHANNEL_COUNT];
+pub type RxChannels = [u16; RxChannelsLink::CHANNEL_COUNT];
 
 /// PWM channels are divided into "steps". Steps are 25 units wide<br>
 /// There are 48 steps between 900 and 2100.<br>
@@ -195,10 +195,16 @@ impl RxChannelRange {
 
     #[must_use]
     #[inline]
-    pub fn is_active(&self, rx_frame: &RxFrame, aux_channel_index: u8) -> bool {
+    pub fn is_active(&self, rx_frame: &RxChannelsLink, aux_channel_index: u8) -> bool {
         let channel_value: u16 = rx_frame.channel(aux_channel_index);
         Self::is_range_active(channel_value, self.start, self.end)
     }
+    /*#[must_use]
+    #[inline]
+    pub fn is_active(&self, rx_channels: &RxChannels, aux_channel_index: u8) -> bool {
+        let channel_value: u16 = rx_channels[aux_channel_index as usize];
+        Self::is_range_active(channel_value, self.start, self.end)
+    }*/
 }
 
 #[cfg(test)]

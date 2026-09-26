@@ -1,4 +1,4 @@
-use crate::{RxChannel, RxFrame};
+use crate::{RxChannel, RxChannelsLink};
 
 /// Control values from receiver scaled to the range `[-1.0, 1.0]`.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -9,8 +9,8 @@ pub struct RcSticks {
     pub throttle: f32,
 }
 
-impl From<RxFrame> for RcSticks {
-    fn from(frame: RxFrame) -> Self {
+impl From<RxChannelsLink> for RcSticks {
+    fn from(frame: RxChannelsLink) -> Self {
         // Map channels in range [1000,2000] to floats in range [0,1] for throttle, [-1,1] for roll, pitch yaw
         RcSticks {
             roll: (f32::from(frame.channels[RxChannel::ROLL]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
@@ -106,7 +106,7 @@ mod tests {
     }
     #[test]
     fn from_rx_frame() {
-        let mut rx_frame = RxFrame::new();
+        let mut rx_frame = RxChannelsLink::new();
         rx_frame.channels[RxChannel::ROLL] = 1250;
         rx_frame.channels[RxChannel::PITCH] = 1500;
         rx_frame.channels[RxChannel::YAW] = 1750;

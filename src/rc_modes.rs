@@ -1,4 +1,4 @@
-use super::{RcMode, RxChannel, RxChannelRange, RxFrame};
+use super::{RcMode, RxChannel, RxChannelRange, RxChannelsLink};
 
 use simple_bitset::BitSet64;
 
@@ -85,7 +85,7 @@ impl ModeActivationCondition {
     }
     #[must_use]
     #[inline]
-    pub fn is_active(&self, rx_frame: &RxFrame) -> bool {
+    pub fn is_active(&self, rx_frame: &RxChannelsLink) -> bool {
         //let channel_value: u16 = rx_frame.auxiliary_channel(self.aux_channel_index);
         //RxChannelRange::is_range_active(channel_value, self.range.start, self.range.end)
         self.range.is_active(rx_frame, self.aux_channel_index)
@@ -315,7 +315,7 @@ impl RcModes {
 
     /// Updates the activated modes using the `RxFrame` values and the mode activation conditions.
     /// `analyze_macs` must have been called before this function is called.
-    pub fn update_activated_modes(&mut self, rx_frame: &RxFrame) {
+    pub fn update_activated_modes(&mut self, rx_frame: &RxChannelsLink) {
         let mut new_bitset = BitSet64::default();
         let mut and_bitset = BitSet64::default();
         let mut sticky_modes = BitSet64::default();
@@ -407,7 +407,7 @@ mod tests {
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
-        let mut rx_frame = RxFrame::default();
+        let mut rx_frame = RxChannelsLink::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;
         let channel_value: u16 = rx_frame.channel(mac_arm.aux_channel_index);
         assert_eq!(1750, channel_value);
@@ -436,7 +436,7 @@ mod tests {
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
-        let mut rx_frame = RxFrame::default();
+        let mut rx_frame = RxChannelsLink::default();
         rx_frame.channels[RxChannel::AUX1] = RxChannel::MID_HIGH;
 
         rx_frame.channels[RxChannel::AUX2] = 1125;

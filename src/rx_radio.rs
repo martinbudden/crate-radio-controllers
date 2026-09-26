@@ -4,7 +4,6 @@ use super::{CrsfRadio, IbusRadio, RadioType, RxFrame, SbusRadio};
 /// Note: this is not called (say) `RxReceiver` to avoid possible confusion with Embassy `Watch` `Receiver`.
 pub trait RxRadio {
     fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame>;
-    fn rx_frame(&self) -> RxFrame;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,13 +30,6 @@ impl RxRadio for Radio {
             Self::Crsf(radio) => radio.on_byte_received(byte),
             Self::Ibus(radio) => radio.on_byte_received(byte),
             Self::Sbus(radio) => radio.on_byte_received(byte),
-        }
-    }
-    fn rx_frame(&self) -> RxFrame {
-        match self {
-            Self::Crsf(radio) => radio.rx_frame(),
-            Self::Ibus(radio) => radio.rx_frame(),
-            Self::Sbus(radio) => radio.rx_frame(),
         }
     }
 }

@@ -88,29 +88,57 @@ impl RxLinkStatus {
     }
 }
 
-/// Receiver frame containing array of rx channel values, link status and RSSI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxFrame {
+pub enum RxFrame {
+    ChannelsLink {
+        channels_link: RxChannelsLink,
+    },
+    LinkStatisticsTx {
+        rssi_dbm: u8,
+        rssi_percent: u8,
+        link_quality: u8, // LQ of 0 may used to indicate a disconnected status to the handset
+        snr: i8,
+    },
+    Battery {
+        voltage: u16, // deci-volts
+        current: u16, // deci-amps
+    },
+    Heartbeat(),
+    Unknown {
+        frame_type: u8,
+    },
+}
+
+/*/// Receiver frame containing array of rx channel values, link status and RSSI.
+#[allow(unused)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RxFrameOld {
     /// The channels in PWM range, nominally `[1000,2000]`.
-    pub channels: [u16; Self::MAX_CHANNEL_COUNT],
+    pub channels: [u16; Self::CHANNEL_COUNT],
     pub frame_type: RxFrameType,
     pub link_status: RxLinkStatus,
     pub rssi: u8,
+}*/
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RxChannelsLink {
+    pub channels: [u16; Self::CHANNEL_COUNT],
+    pub link_status: RxLinkStatus,
 }
 
-impl Default for RxFrame {
+impl Default for RxChannelsLink {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RxFrame {
+impl RxChannelsLink {
     // SBUS has 18 channels (the last two are digital channels with the two values 1000 or 2000), but we only use 16.
     // IBUS has 14 channels
     // CRSF has 16 channels
-    pub const MAX_CHANNEL_COUNT: usize = 16;
+    pub const CHANNEL_COUNT: usize = 16;
     pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
-    pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::MAX_CHANNEL_COUNT] = [
+    pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::CHANNEL_COUNT] = [
         RxChannel::MID, // Sticks default to MID.
         RxChannel::MID,
         RxChannel::LOW, // Throttle defaults to LOW.
@@ -132,16 +160,11 @@ impl RxFrame {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            channels: Self::FAILSAFE_CHANNEL_VALUES,
-            frame_type: RxFrameType::Heartbeat,
-            link_status: RxLinkStatus::Ok,
-            rssi: 0,
-        }
+        Self { channels: Self::FAILSAFE_CHANNEL_VALUES, link_status: RxLinkStatus::Ok }
     }
 }
 
-impl RxFrame {
+impl RxChannelsLink {
     /// Returns true if the frame is safe to use for flight control.
     #[must_use]
     pub fn is_valid(&self) -> bool {
@@ -151,7 +174,7 @@ impl RxFrame {
     #[must_use]
     pub fn channel(&self, channel_index: u8) -> u16 {
         let index = usize::from(channel_index);
-        if index < Self::MAX_CHANNEL_COUNT {
+        if index < Self::CHANNEL_COUNT {
             return self.channels[channel_index as usize];
         }
         RxChannel::LOW
@@ -168,7 +191,7 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full::<RxFrame>();
+        is_full::<RxChannelsLink>();
         is_full::<RxLinkStatus>();
     }
 }

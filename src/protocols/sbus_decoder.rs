@@ -1,4 +1,4 @@
-use crate::{RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannelsLink, RxFrame, RxLinkStatus};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum State {
@@ -87,7 +87,8 @@ impl SbusDecoder {
             let channels = Self::parse_sbus_channels(&channel_data);
             // TODO: check RxLinkStatus for SBUS.
             let link_status = RxLinkStatus::Ok;
-            return Some(RxFrame { channels, frame_type: RxFrameType::RcChannels, link_status, rssi: 0 });
+            let channels_link = RxChannelsLink { channels, link_status };
+            return Some(RxFrame::ChannelsLink { channels_link });
         }
         None
     }

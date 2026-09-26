@@ -1,4 +1,4 @@
-use crate::{RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannelsLink, RxFrame, RxLinkStatus};
 
 /// The iBUS protocol (by FlySky/Turnigy).
 /// It is not inverted and uses a straightforward "Sum of Bytes" checksum.
@@ -102,14 +102,15 @@ impl IbusDecoder {
         if complete {
             const THROTTLE_CHANNEL: usize = 2;
 
-            let mut channels = [0u16; RxFrame::MAX_CHANNEL_COUNT];
+            let mut channels = [0u16; RxChannelsLink::CHANNEL_COUNT];
             // .as_chunks::<2>().0 gives a slice of [u8; 2] arrays
             for (ii, &chunk) in self.buffer.as_chunks::<2>().0.iter().enumerate() {
                 channels[ii] = u16::from_le_bytes(chunk);
             }
             let link_status = if channels[THROTTLE_CHANNEL] < 950 { RxLinkStatus::Failsafe } else { RxLinkStatus::Ok };
 
-            Some(RxFrame { channels, frame_type: RxFrameType::RcChannels, link_status, rssi: 0 })
+            let channels_link = RxChannelsLink { channels, link_status };
+            Some(RxFrame::ChannelsLink { channels_link })
         } else {
             None
         }
@@ -131,7 +132,7 @@ mod test_traits {
 
 #[cfg(test)]
 mod tests {
-    use crate::{RxFrame, RxLinkStatus};
+    use crate::RxLinkStatus;
 
     use super::*;
 
@@ -183,18 +184,23 @@ mod tests {
 
         // 3. Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
-        let ibus_frame = result.unwrap();
-
-        assert_eq!(
-            ibus_frame.channels[..IbusDecoder::CHANNEL_COUNT],
-            input_channels,
-            "Decoded values do not match original inputs"
-        );
-        let rx_frame = RxFrame::from(ibus_frame);
-        assert!(
-            rx_frame.link_status == RxLinkStatus::Ok,
-            "Decoder incorrectly flagged a healthy signal as a failsafe!"
-        );
+        let rx_frame = result.unwrap();
+        match rx_frame {
+            RxFrame::ChannelsLink { channels_link } => {
+                assert_eq!(
+                    channels_link.channels[..IbusDecoder::CHANNEL_COUNT],
+                    input_channels,
+                    "Decoded values do not match original inputs"
+                );
+                assert!(
+                    channels_link.link_status == RxLinkStatus::Ok,
+                    "Decoder incorrectly flagged a healthy signal as a failsafe!"
+                );
+            }
+            _ => {
+                panic!("Decoded to wrong frame type")
+            }
+        }
     }
 
     #[test]
@@ -242,11 +248,19 @@ mod tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
-        assert_eq!(
-            decoded_frame.unwrap().channels[..IbusDecoder::CHANNEL_COUNT],
-            [1500; IbusDecoder::CHANNEL_COUNT],
-            "Recovered packet contained bad channel data"
-        );
+        let rx_frame = decoded_frame.unwrap();
+        match rx_frame {
+            RxFrame::ChannelsLink { channels_link } => {
+                assert_eq!(
+                    channels_link.channels[..IbusDecoder::CHANNEL_COUNT],
+                    [1500; IbusDecoder::CHANNEL_COUNT],
+                    "Recovered packet contained bad channel data"
+                );
+            }
+            _ => {
+                panic!("decoded to incorrect frame type")
+            }
+        }
     }
 
     #[test]
@@ -265,11 +279,17 @@ mod tests {
         }
 
         assert!(result.is_some());
-        let ibus_frame = result.unwrap();
-        let rx_frame = RxFrame::from(ibus_frame);
-        assert!(
-            rx_frame.link_status == RxLinkStatus::Failsafe,
-            "Decoder failed to identify internal receiver link failure!"
-        );
+        let rx_frame = result.unwrap();
+        match rx_frame {
+            RxFrame::ChannelsLink { channels_link } => {
+                assert!(
+                    channels_link.link_status == RxLinkStatus::Failsafe,
+                    "Decoder failed to identify internal receiver link failure!"
+                );
+            }
+            _ => {
+                panic!("decoded to incorrect frame type")
+            }
+        }
     }
 }
