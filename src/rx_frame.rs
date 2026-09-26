@@ -1,5 +1,71 @@
 use super::RxChannel;
 
+/// Crossfire compatible frame types.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RxFrameType {
+    // see https://github.com/crsf-wg/crsf/wiki/Packet-Types
+    Gps = 0x02,
+    VarioSensor = 0x07,
+    BatterySensor = 0x08,
+    BaroAltitude = 0x09,
+    #[default]
+    Heartbeat = 0x0B,
+    LinkStatistics = 0x14,
+    RcChannels = 0x16,
+    SubsetRcChannels = 0x17,
+    LinkStatisticsRx = 0x1C,
+    LinkStatisticsTx = 0x1D,
+    Attitude = 0x1E,
+    FlightMode = 0x21,
+    // Extended Header Frames, range: 0x28 to 0x96
+    DevicePing = 0x28,
+    DeviceInfo = 0x29,
+    ParameterSettingsEntry = 0x2B,
+    ParameterRead = 0x2C,
+    ParameterWrite = 0x2D,
+    Command = 0x32,
+    // MSP commands
+    MspReq = 0x7A,
+    MspResp = 0x7B,
+    MspWrite = 0x7C,
+    DisplayportCmd = 0x7D,
+    ArdupilotResp = 0x80,
+}
+
+impl RxFrameType {
+    /// Forgiving conversion, converts invalid values to default.
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0x02 => Self::Gps,
+            0x07 => Self::VarioSensor,
+            0x08 => Self::BatterySensor,
+            0x09 => Self::BaroAltitude,
+            0x0B => Self::Heartbeat,
+            0x14 => Self::LinkStatistics,
+            0x16 => Self::RcChannels,
+            0x17 => Self::SubsetRcChannels,
+            0x1C => Self::LinkStatisticsRx,
+            0x1D => Self::LinkStatisticsTx,
+            0x1E => Self::Attitude,
+            0x21 => Self::FlightMode,
+            0x28 => Self::DevicePing,
+            0x29 => Self::DeviceInfo,
+            0x2B => Self::ParameterSettingsEntry,
+            0x2C => Self::ParameterRead,
+            0x2D => Self::ParameterWrite,
+            0x32 => Self::Command,
+            0x7A => Self::MspReq,
+            0x7B => Self::MspResp,
+            0x7C => Self::MspWrite,
+            0x7D => Self::DisplayportCmd,
+            0x80 => Self::ArdupilotResp,
+            _ => Self::default(),
+        }
+    }
+}
+
 /// Status of radio link.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RxLinkStatus {
@@ -7,14 +73,6 @@ pub enum RxLinkStatus {
     Ok,
     Failsafe,
     NoSignal,
-}
-
-impl RxLinkStatus {
-    /// Constructor.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self::Ok
-    }
 }
 
 impl RxLinkStatus {
@@ -31,11 +89,12 @@ impl RxLinkStatus {
 }
 
 /// Receiver frame containing array of rx channel values, link status and RSSI.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RxFrame {
     /// The channels in PWM range, nominally `[1000,2000]`.
     pub channels: [u16; Self::MAX_CHANNEL_COUNT],
-    pub status: RxLinkStatus,
+    pub frame_type: RxFrameType,
+    pub link_status: RxLinkStatus,
     pub rssi: u8,
 }
 
@@ -73,7 +132,12 @@ impl RxFrame {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self { channels: Self::FAILSAFE_CHANNEL_VALUES, status: RxLinkStatus::new(), rssi: 0 }
+        Self {
+            channels: Self::FAILSAFE_CHANNEL_VALUES,
+            frame_type: RxFrameType::Heartbeat,
+            link_status: RxLinkStatus::Ok,
+            rssi: 0,
+        }
     }
 }
 
@@ -81,7 +145,7 @@ impl RxFrame {
     /// Returns true if the frame is safe to use for flight control.
     #[must_use]
     pub fn is_valid(&self) -> bool {
-        self.status == RxLinkStatus::Ok
+        self.link_status == RxLinkStatus::Ok
     }
     /// Returns value of auxiliary channel, or `RxChannel::LOW` if channel index invalid.
     #[must_use]

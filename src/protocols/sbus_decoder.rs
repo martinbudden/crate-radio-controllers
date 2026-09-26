@@ -1,4 +1,4 @@
-use super::SbusFrame;
+use crate::{RxFrame, RxFrameType, RxLinkStatus};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum State {
@@ -50,7 +50,7 @@ impl SbusDecoder {
 ///
 impl SbusDecoder {
     /// This is the core logic. It takes one byte and returns a Some(Frame) when a full, valid packet is completed.
-    pub fn on_byte_received(&mut self, byte: u8) -> Option<SbusFrame> {
+    pub fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
         let mut complete = false;
 
         self.state = match core::mem::take(&mut self.state) {
@@ -83,18 +83,17 @@ impl SbusDecoder {
             }
         };
 
-        if complete {
-            let data: [u8; Self::PAYLOAD_LENGTH] = self.buffer[1..23].try_into().unwrap_or([0u8; Self::PAYLOAD_LENGTH]);
-            let channels = Self::parse_sbus_channels(&data);
-            let sbus_frame = SbusFrame { channels, flags: 0, rssi: 0 };
-            Some(sbus_frame)
-        } else {
-            None
+        if complete && let Ok(channel_data) = self.buffer[1..23].try_into() {
+            let channels = Self::parse_sbus_channels(&channel_data);
+            // TODO: check RxLinkStatus for SBUS.
+            let link_status = RxLinkStatus::Ok;
+            return Some(RxFrame { channels, frame_type: RxFrameType::RcChannels, link_status, rssi: 0 });
         }
+        None
     }
 
     #[allow(unused)]
-    pub fn parse(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<SbusFrame> {
+    pub fn parse(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<RxFrame> {
         for byte in buffer {
             if let Some(frame) = self.on_byte_received(*byte) {
                 return Some(frame);
@@ -186,39 +185,6 @@ mod test_traits {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn new() {
-        let frame = SbusFrame::default();
-        assert_eq!(0, frame.rssi);
-    }
-    #[test]
-    fn parse_message() {
-        #[rustfmt::skip]
-        let stream: [u8; SbusDecoder::PACKET_LENGTH] = [
-            0x0F, // header
-            // 22 u8s
-            0xE0, 0x03, 0x1F, 0x58, 0xC0, 0x07, 0x16, 0xB0, 0x80, 0x05, 0x2C, 
-            0x60, 0x01, 0x0B, 0xF8, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x03, // flags
-            0x00, // footer
-        ];
-
-        let expected_channels: [u16; SbusFrame::CHANNEL_COUNT] =
-            [992, 992, 352, 992, 352, 352, 352, 352, 352, 352, 992, 992, 0, 0, 0, 0];
-
-        let mut sbus_parser = SbusDecoder::new();
-        if let Some(frame) = sbus_parser.parse(&stream) {
-            let channels = frame.channels;
-            assert_eq!(expected_channels, channels);
-        } else {
-            unreachable!();
-        }
-    }
-}
-#[cfg(test)]
-mod sbus_tests {
     // Bring the `parse_sbus_channels` visibility into the local test scope
     use super::*;
 

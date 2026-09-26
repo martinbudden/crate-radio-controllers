@@ -39,3 +39,15 @@ impl From<CrsfFrame> for RxFrame {
         Self { channels, status, rssi: frame.rssi }
     }
 }
+
+#[cfg(test)]
+mod test_traits {
+    use super::*;
+
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+
+    #[test]
+    fn normal_types() {
+        is_full::<CrsfFrame>();
+    }
+}

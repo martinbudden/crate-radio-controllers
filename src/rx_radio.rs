@@ -3,7 +3,7 @@ use super::{CrsfRadio, IbusRadio, RadioType, RxFrame, SbusRadio};
 /// The common interface for all RC radios.
 /// Note: this is not called (say) `RxReceiver` to avoid possible confusion with Embassy `Watch` `Receiver`.
 pub trait RxRadio {
-    fn on_byte_received(&mut self, byte: u8) -> bool;
+    fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame>;
     fn rx_frame(&self) -> RxFrame;
 }
 
@@ -26,7 +26,7 @@ impl Radio {
 }
 
 impl RxRadio for Radio {
-    fn on_byte_received(&mut self, byte: u8) -> bool {
+    fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
         match self {
             Self::Crsf(radio) => radio.on_byte_received(byte),
             Self::Ibus(radio) => radio.on_byte_received(byte),

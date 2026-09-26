@@ -1,103 +1,132 @@
 #![allow(unused)]
 
+use crate::{RxFrame, RxFrameType, RxLinkStatus};
+
 use super::CrcDvbS2;
-
-/// Maximum channels provided by CRSF.
-pub const CRSF_MAX_CHANNELS: usize = 16;
-/// Length of the raw bit-packed channels block (16 channels * 11 bits = 176 bits = 22 bytes).
-pub const CRSF_PAYLOAD_LEN: usize = 22;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct CrsfFrame {
-    pub channels: [u16; CRSF_MAX_CHANNELS],
-}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum State {
     #[default]
-    WaitForAddressByte,
-    WaitLength,
+    WaitForSyncByte,
+    WaitForLengthByte,
     ReadPayload {
         index: usize,
-        expected_len: usize,
+        length: usize,
     },
-    ValidateChecksum,
+    ValidateChecksum {
+        length: usize,
+    },
 }
 
 impl State {
-    const ADDRESS_BYTE: u8 = 0xC8;
-    // Stores Type (1 byte) + Channel Payload (22 bytes)
+    const SYNC_BYTE: u8 = 0xC8;
 }
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// packet is composed as follows
+/// byte 0: sync;
+/// byte 1: length; // length is length of type, payload, and CRC
+/// byte 2: type;
+/// 22 bytes of payload 176 bits of data (11 bits per channel * 16 channels) = 22 bytes.
+/// CRC byte after payload. CRC is calculated on all bytes from type to end of payload.
+/// ie `[Sync] [Length] [Type] [Payload...] [CRC]`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CrsfDecoder {
     state: State,
-    frame: CrsfFrame,
-    buffer: [u8; Self::BUFFER_SIZE],
+    // Stores Type (1 byte) + Channel Payload (22 bytes)
+    buffer: [u8; Self::MAX_PACKET_SIZE],
+}
+
+impl Default for CrsfDecoder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CrsfDecoder {
-    pub const CHANNEL_COUNT: usize = 16;
-    const BUFFER_SIZE: usize = CRSF_PAYLOAD_LEN + 1;
-    pub const fn new() -> Self {
-        Self {
-            state: State::WaitForAddressByte,
-            frame: CrsfFrame { channels: [1000; Self::CHANNEL_COUNT] },
-            buffer: [0u8; Self::BUFFER_SIZE],
-        }
-    }
+    pub const MAX_PACKET_SIZE: usize = 64;
 
+    /// Length of the bit-packed channels block (16 channels * 11 bits = 176 bits = 22 bytes).
+    pub const RC_PACKET_LENGTH: usize = 22;
+    pub(crate) const HALF_RC_PACKET_LENGTH: usize = 11;
+
+    pub const CHANNEL_COUNT: usize = 16;
+
+    pub const fn new() -> Self {
+        Self { state: State::WaitForSyncByte, buffer: [0u8; Self::MAX_PACKET_SIZE] }
+    }
+}
+
+impl CrsfDecoder {
     /// Feeds a single byte into the CRSF state machine.
-    /// Returns `Some(&CrsfFrame)` on a successful CRC8 match.
-    pub fn on_byte_received(&mut self, byte: u8) -> Option<&CrsfFrame> {
-        let mut should_parse = false;
+    /// Returns `Some(RxFrame)` on successfully parsing a CRSF frame.
+    /// Currently only handles `FRAMETYPE_RC_CHANNELS_PACKED`.
+    pub fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
+        let mut complete = false;
 
         self.state = match core::mem::take(&mut self.state) {
-            State::WaitForAddressByte => {
-                if byte == State::ADDRESS_BYTE {
-                    State::WaitLength
+            State::WaitForSyncByte => {
+                if byte == State::SYNC_BYTE {
+                    State::WaitForLengthByte
                 } else {
-                    State::WaitForAddressByte
+                    State::WaitForSyncByte
                 }
             }
-            State::WaitLength => {
-                if byte >= 3 && (byte as usize) <= (CRSF_PAYLOAD_LEN + 2) {
-                    State::ReadPayload { index: 0, expected_len: byte as usize }
+            State::WaitForLengthByte => {
+                let payload_len = byte as usize;
+                if (3..=(Self::MAX_PACKET_SIZE)).contains(&payload_len) {
+                    State::ReadPayload { index: 0, length: payload_len }
                 } else {
-                    State::WaitForAddressByte
+                    State::WaitForSyncByte
                 }
             }
-            State::ReadPayload { index, expected_len } => {
-                self.buffer[index] = byte;
-                let next_index = index + 1;
-
-                // FIX: Let index fill all payload bytes completely (Type + Payload = expected_len - 1).
+            State::ReadPayload { index, length } => {
+                // Let index fill all payload bytes completely (Type + Payload = expected_len - 1).
                 // For a standard frame of length 24, this will fill buffer indices 0 to 22.
-                if next_index >= (expected_len - 1) {
-                    State::ValidateChecksum
+                self.buffer[index] = byte;
+
+                if index >= length - 2 {
+                    State::ValidateChecksum { length }
                 } else {
-                    State::ReadPayload { index: next_index, expected_len }
+                    let index = index + 1;
+                    State::ReadPayload { index, length }
                 }
             }
-            State::ValidateChecksum => {
-                // This byte is now accurately the 24th byte (the raw CRC byte)
+            State::ValidateChecksum { length } => {
+                const BUFFER_SIZE: usize = 23;
+                // This byte is now the CRC byte
                 let received_crc = byte;
 
+                // length is length of type, payload, and CRC
+                // CRC is calculated on all bytes from type to end of payload
                 // CRSF payload for checksum is always (Length - 1).
-                // Since this state is constant, we can slice the exact written payload length.
-                let payload = &self.buffer[..Self::BUFFER_SIZE];
+                //let payload = &self.buffer[..BUFFER_SIZE];
+                let payload = &self.buffer[..length - 1];
 
-                if CrcDvbS2::calculate(payload) == received_crc && self.buffer[0] == 0x16 {
-                    should_parse = true;
+                if CrcDvbS2::calculate(payload) == received_crc {
+                    complete = true;
                 }
-                State::WaitForAddressByte
+                State::WaitForSyncByte
             }
         };
 
-        if should_parse {
-            // Safe compile-time slice extraction
-            if let Ok(channel_data) = self.buffer[1..23].try_into() {
-                Self::parse_channels(&mut self.frame.channels, channel_data);
-                return Some(&self.frame);
+        if complete {
+            let mut channels = [0; RxFrame::MAX_CHANNEL_COUNT];
+            let frame_type = self.buffer[0];
+            if frame_type == RxFrameType::RcChannels as u8 {
+                if let Ok(channel_data) = self.buffer[1..23].try_into() {
+                    Self::parse_rc_channels(&mut channels, channel_data);
+                    // TODO: check RxLinkStatus for CRSF
+                    let link_status = RxLinkStatus::Ok;
+                    let rx_frame = RxFrame { channels, frame_type: RxFrameType::RcChannels, link_status, rssi: 0 };
+
+                    return Some(rx_frame);
+                }
+            } else {
+                // TODO: check RxLinkStatus for CRSF
+                let frame_type = RxFrameType::from_u8(frame_type);
+                let link_status = RxLinkStatus::Ok;
+                let rx_frame = RxFrame { channels, frame_type, link_status, rssi: 0 };
+
+                return Some(rx_frame);
             }
         }
 
@@ -105,28 +134,28 @@ impl CrsfDecoder {
     }
 
     /// Fast 32-bit overlapping window channel extraction (leveraging your optimized SBUS pipeline).
-    fn parse_channels(channels: &mut [u16; Self::CHANNEL_COUNT], payload: &[u8; CRSF_PAYLOAD_LEN]) {
+    fn parse_rc_channels(channels: &mut [u16; Self::CHANNEL_COUNT], payload: &[u8; Self::RC_PACKET_LENGTH]) {
         let chunks = payload.as_chunks::<11>().0;
 
-        Self::parse_8_channels(&chunks[0], &mut channels[0..8]);
-        Self::parse_8_channels(&chunks[1], &mut channels[8..16]);
+        Self::parse_8_rc_channels(&mut channels[0..8], &chunks[0]);
+        Self::parse_8_rc_channels(&mut channels[8..16], &chunks[1]);
     }
 
     #[inline]
-    fn parse_8_channels(p: &[u8; 11], out: &mut [u16]) {
-        let w0 = u32::from_le_bytes([p[0], p[1], p[2], p[3]]);
+    fn parse_8_rc_channels(out: &mut [u16], s: &[u8; Self::HALF_RC_PACKET_LENGTH]) {
+        let w0 = u32::from_le_bytes([s[0], s[1], s[2], s[3]]);
         out[0] = (w0 & 0x7FF) as u16;
         out[1] = ((w0 >> 11) & 0x7FF) as u16;
 
-        let w1 = u32::from_le_bytes([p[2], p[3], p[4], p[5]]);
+        let w1 = u32::from_le_bytes([s[2], s[3], s[4], s[5]]);
         out[2] = ((w1 >> 6) & 0x7FF) as u16;
         out[3] = ((w1 >> 17) & 0x7FF) as u16;
 
-        let w2 = u32::from_le_bytes([p[5], p[6], p[7], p[8]]);
+        let w2 = u32::from_le_bytes([s[5], s[6], s[7], s[8]]);
         out[4] = ((w2 >> 4) & 0x7FF) as u16;
         out[5] = ((w2 >> 15) & 0x7FF) as u16;
 
-        let w3 = u32::from_le_bytes([p[8], p[9], p[10], 0]);
+        let w3 = u32::from_le_bytes([s[8], s[9], s[10], 0]);
         out[6] = ((w3 >> 2) & 0x7FF) as u16;
         out[7] = ((w3 >> 13) & 0x7FF) as u16;
     }
@@ -167,7 +196,7 @@ mod crsf_tests {
 
     /// Helper function to build a completely valid, binary-accurate CRSF packet.
     /// Packs 16 channels into 11-bit chunks, appends type headers, and stamps the CRC8 byte.
-    fn create_valid_crsf_packet(input_channels: [u16; 16]) -> [u8; 26] {
+    fn create_crsf_packet(input_channels: [u16; 16]) -> [u8; 26] {
         let mut packet = [0u8; 26];
         packet[0] = 0xC8; // Address byte
         packet[1] = 24; // Length (1 byte Type + 22 bytes Payload + 1 byte CRC)
@@ -208,17 +237,17 @@ mod crsf_tests {
         // 1. Establish an arbitrary set of healthy channel mappings (within 0..2047 limits)
         let input_channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
 
-        let raw_stream = create_valid_crsf_packet(input_channels);
+        let raw_stream = create_crsf_packet(input_channels);
 
-        // 2. Feed the stream into the state machine byte-by-byte
+        // Feed the stream into the state machine byte-by-byte
         let mut result = None;
         for &byte in raw_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
-                result = Some(*frame); // Copy the reference data out safely for evaluation
+                result = Some(frame); // Copy the reference data out safely for evaluation
             }
         }
 
-        // 3. Assert the state machine accurately matched the complete packet
+        // Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
         let output_frame = result.unwrap();
 
@@ -232,7 +261,7 @@ mod crsf_tests {
     fn test_corrupted_crc_rejection() {
         let mut decoder = CrsfDecoder::new();
         let input_channels = [1000; 16];
-        let mut raw_stream = create_valid_crsf_packet(input_channels);
+        let mut raw_stream = create_crsf_packet(input_channels);
 
         // Corrupt the final CRC byte intentionally
         let last_idx = raw_stream.len() - 1;
@@ -241,7 +270,7 @@ mod crsf_tests {
         let mut result = None;
         for &byte in raw_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
-                result = Some(*frame);
+                result = Some(frame);
             }
         }
 
@@ -252,7 +281,7 @@ mod crsf_tests {
     fn test_noise_and_recovery() {
         let mut decoder = CrsfDecoder::new();
         let input_channels = [1500; 16];
-        let valid_packet = create_valid_crsf_packet(input_channels);
+        let valid_packet = create_crsf_packet(input_channels);
 
         // Create a fixed stack noise prefix array (6 bytes)
         let noise = [0x00, 0xC7, 0xC8, 0x02, 0x16, 0xFF]; // Includes a false start 0xC8
@@ -263,7 +292,7 @@ mod crsf_tests {
         let mut decoded_frame = None;
         for &byte in noisy_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
-                decoded_frame = Some(*frame);
+                decoded_frame = Some(frame);
             }
         }
 

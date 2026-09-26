@@ -69,3 +69,36 @@ impl From<SbusFrame> for RxFrame {
         Self { channels, status, rssi: frame.rssi }
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let frame = SbusFrame::default();
+        assert_eq!(0, frame.rssi);
+    }
+    #[test]
+    fn parse_message() {
+        #[rustfmt::skip]
+        let stream: [u8; SbusDecoder::PACKET_LENGTH] = [
+            0x0F, // header
+            // 22 u8s
+            0xE0, 0x03, 0x1F, 0x58, 0xC0, 0x07, 0x16, 0xB0, 0x80, 0x05, 0x2C, 
+            0x60, 0x01, 0x0B, 0xF8, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x03, // flags
+            0x00, // footer
+        ];
+
+        let expected_channels: [u16; SbusFrame::CHANNEL_COUNT] =
+            [992, 992, 352, 992, 352, 352, 352, 352, 352, 352, 992, 992, 0, 0, 0, 0];
+
+        let mut sbus_parser = SbusDecoder::new();
+        if let Some(frame) = sbus_parser.parse(&stream) {
+            let channels = frame.channels;
+            assert_eq!(expected_channels, channels);
+        } else {
+            unreachable!();
+        }
+    }
+}
