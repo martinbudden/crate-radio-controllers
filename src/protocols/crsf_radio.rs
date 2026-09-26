@@ -1,4 +1,4 @@
-use super::{CrsfFrame, CrsfParser, RadioSerial, RxProtocol};
+use super::{CrsfDecoder, CrsfFrame, CrsfParser, RadioSerial, RxProtocol};
 use crate::{RxChannel, RxFrame, RxRadio, RxRadioCommon};
 
 /*pub struct CrsfReceiverXXXX<UART> {
@@ -11,6 +11,7 @@ use crate::{RxChannel, RxFrame, RxRadio, RxRadioCommon};
 pub struct CrsfRadio {
     common: RxRadioCommon,
     serial: RadioSerial,
+    decoder: CrsfDecoder,
     frame: CrsfFrame,
     packet_size: usize,
     packet_type: u8,
@@ -71,6 +72,7 @@ impl CrsfRadio {
         Self {
             common: RxRadioCommon::new(),
             serial: RadioSerial::new(),
+            decoder: CrsfDecoder::new(),
             frame: CrsfFrame::new(),
             packet_size: 0,
             packet_type: 0,

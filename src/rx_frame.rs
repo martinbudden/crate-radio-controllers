@@ -17,11 +17,24 @@ impl RxLinkStatus {
     }
 }
 
+impl RxLinkStatus {
+    /// Forgiving conversion, converts invalid values to default.
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Ok,
+            1 => Self::Failsafe,
+            2 => Self::NoSignal,
+            _ => Self::default(),
+        }
+    }
+}
+
 /// Receiver frame containing array of rx channel values, link status and RSSI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RxFrame {
     /// The channels in PWM range, nominally `[1000,2000]`.
-    pub channels: [u16; RxFrame::MAX_CHANNEL_COUNT],
+    pub channels: [u16; Self::MAX_CHANNEL_COUNT],
     pub status: RxLinkStatus,
     pub rssi: u8,
 }
@@ -38,32 +51,29 @@ impl RxFrame {
     // CRSF has 16 channels
     pub const MAX_CHANNEL_COUNT: usize = 16;
     pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
+    pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::MAX_CHANNEL_COUNT] = [
+        RxChannel::MID, // Sticks default to MID.
+        RxChannel::MID,
+        RxChannel::LOW, // Throttle defaults to LOW.
+        RxChannel::MID,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+    ];
 
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            channels: [
-                RxChannel::MID, // Sticks default to MID.
-                RxChannel::MID,
-                RxChannel::LOW, // Throttle defaults to LOW.
-                RxChannel::MID,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-                RxChannel::LOW,
-            ],
-            status: RxLinkStatus::new(),
-            rssi: 0,
-        }
+        Self { channels: Self::FAILSAFE_CHANNEL_VALUES, status: RxLinkStatus::new(), rssi: 0 }
     }
 }
 
@@ -81,6 +91,9 @@ impl RxFrame {
             return self.channels[channel_index as usize];
         }
         RxChannel::LOW
+    }
+    pub fn set_channels_to_failsafe_values(&mut self) {
+        self.channels = Self::FAILSAFE_CHANNEL_VALUES;
     }
 }
 #[cfg(test)]
