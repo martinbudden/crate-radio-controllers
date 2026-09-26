@@ -26,6 +26,8 @@ impl SbusDecoder {
     pub const PACKET_LENGTH: usize = 25;
     pub const HEADER_LENGTH: usize = 1;
     pub const PAYLOAD_LENGTH: usize = 22;
+    const FRAME_LOST: u8 = 0x04;
+    const FAILSAFE: u8 = 0x08;
 
     pub const fn new() -> Self {
         Self { state: State::WaitingForHeader, buffer: [0u8; Self::PACKET_LENGTH] }
@@ -87,10 +89,17 @@ impl SbusDecoder {
             let channels = Self::parse_sbus_channels(&channel_data);
             let channels = RxChannels::from_channels(channels);
 
-            // TODO: check RxLinkStatus for SBUS.
-            let link_status = RxLinkStatus::Ok;
+            let flags = self.buffer[23];
+            // Check FAILSAFE flag first, since this indicates multiple lost frames
+            let link_status = if flags & Self::FAILSAFE != 0 {
+                RxLinkStatus::Failsafe
+            } else if flags & Self::FRAME_LOST != 0 {
+                RxLinkStatus::NoSignal
+            } else {
+                RxLinkStatus::Ok
+            };
             let channels_link = RxChannelsLinkStatus { channels, link_status };
-            return Some(RxFrame::ChannelsLink { channels_link });
+            return Some(RxFrame::ChannelsLinkStatus { channels_link_status: channels_link });
         }
         None
     }

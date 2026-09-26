@@ -1,4 +1,4 @@
-use super::RxChannels;
+use core::ops::{Index, IndexMut, Range};
 
 #[cfg(feature = "storage")]
 use sequential_storage::map::PostcardValue;
@@ -205,12 +205,108 @@ impl RxChannelRange {
         Self::is_range_active(channel_value, self.start, self.end)
     }*/
 }
+/// Array of RX channels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RxChannels([u16; Self::CHANNEL_COUNT]);
+
+impl RxChannels {
+    pub const CHANNEL_COUNT: usize = 16;
+
+    pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::CHANNEL_COUNT] = [
+        RxChannel::MID, // Sticks default to MID.
+        RxChannel::MID,
+        RxChannel::LOW, // Throttle defaults to LOW.
+        RxChannel::MID,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+        RxChannel::LOW,
+    ];
+
+    /// Constructor.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self(RxChannels::FAILSAFE_CHANNEL_VALUES)
+    }
+    #[must_use]
+    pub const fn from_channels(channels: [u16; Self::CHANNEL_COUNT]) -> Self {
+        Self(channels)
+    }
+}
+
+impl Default for RxChannels {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Index<usize> for RxChannels {
+    type Output = u16;
+
+    /// Access channel by index.
+    #[inline]
+    fn index(&self, index: usize) -> &u16 {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<usize> for RxChannels {
+    /// Set channel by index.
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut u16 {
+        &mut self.0[index]
+    }
+}
+
+impl Index<Range<usize>> for RxChannels {
+    type Output = [u16];
+
+    #[inline]
+    fn index(&self, index: Range<usize>) -> &[u16] {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<Range<usize>> for RxChannels {
+    #[inline]
+    fn index_mut(&mut self, index: Range<usize>) -> &mut [u16] {
+        &mut self.0[index]
+    }
+}
+
+impl RxChannels {
+    /// Returns value of channel, or `RxChannel::LOW` if channel index invalid.
+    #[must_use]
+    pub fn channel(&self, channel_index: u8) -> u16 {
+        let index = usize::from(channel_index);
+        if index < Self::CHANNEL_COUNT {
+            return self.0[channel_index as usize];
+        }
+        RxChannel::LOW
+    }
+    #[must_use]
+    pub fn channels(&self) -> [u16; Self::CHANNEL_COUNT] {
+        self.0
+    }
+    pub fn set_channels_to_failsafe_values(&mut self) {
+        self.0 = Self::FAILSAFE_CHANNEL_VALUES;
+    }
+}
 
 #[cfg(test)]
 mod test_traits {
     use super::*;
 
     fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full_no_default<T: Sized + Send + Sync + Unpin + Copy + Clone + PartialEq>() {}
     #[cfg(feature = "serde")]
     fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
     #[cfg(feature = "storage")]
@@ -218,7 +314,9 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
+        is_full_no_default::<RxChannel>();
         is_full::<RxChannelRange>();
+        is_full::<RxChannels>();
     }
     #[cfg(feature = "serde")]
     #[test]

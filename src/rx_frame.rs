@@ -1,6 +1,25 @@
-use core::ops::{Index, IndexMut, Range};
+use super::{RxChannel, RxChannels};
 
-use super::RxChannel;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RxFrame {
+    ChannelsLinkStatus {
+        channels_link_status: RxChannelsLinkStatus,
+    },
+    LinkStatisticsTx {
+        rssi_dbm: u8,
+        rssi_percent: u8,
+        link_quality: u8, // link quality of 0 may used to indicate a disconnected status to the handset
+        snr: i8,
+    },
+    Battery {
+        voltage: u16, // deci-volts
+        current: u16, // deci-amps
+    },
+    Heartbeat(),
+    Unknown {
+        frame_type: u8,
+    },
+}
 
 /// Crossfire compatible frame types.
 #[repr(u8)]
@@ -91,38 +110,6 @@ impl RxLinkStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RxFrame {
-    ChannelsLink {
-        channels_link: RxChannelsLinkStatus,
-    },
-    LinkStatisticsTx {
-        rssi_dbm: u8,
-        rssi_percent: u8,
-        link_quality: u8, // LQ of 0 may used to indicate a disconnected status to the handset
-        snr: i8,
-    },
-    Battery {
-        voltage: u16, // deci-volts
-        current: u16, // deci-amps
-    },
-    Heartbeat(),
-    Unknown {
-        frame_type: u8,
-    },
-}
-
-/*/// Receiver frame containing array of rx channel values, link status and RSSI.
-#[allow(unused)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxFrameOld {
-    /// The channels in PWM range, nominally `[1000,2000]`.
-    pub channels: [u16; Self::CHANNEL_COUNT],
-    pub frame_type: RxFrameType,
-    pub link_status: RxLinkStatus,
-    pub rssi: u8,
-}*/
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RxChannelsLinkStatus {
     pub channels: RxChannels,
     pub link_status: RxLinkStatus,
@@ -135,7 +122,7 @@ impl Default for RxChannelsLinkStatus {
 }
 
 impl RxChannelsLinkStatus {
-    // SBUS has 18 channels (the last two are digital channels with the two values 1000 or 2000), but we only use 16.
+    // SBUS has 18 channels, but we only use 16 (the last two are digital channels with the two values 1000 or 2000).
     // IBUS has 14 channels
     // CRSF has 16 channels
     pub const CHANNEL_COUNT: usize = 16;
@@ -155,102 +142,6 @@ impl RxChannelsLinkStatus {
     }
 }
 
-/// Array of RX channels.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxChannels([u16; Self::CHANNEL_COUNT]);
-
-impl RxChannels {
-    pub const CHANNEL_COUNT: usize = 16;
-
-    pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::CHANNEL_COUNT] = [
-        RxChannel::MID, // Sticks default to MID.
-        RxChannel::MID,
-        RxChannel::LOW, // Throttle defaults to LOW.
-        RxChannel::MID,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-        RxChannel::LOW,
-    ];
-
-    /// Constructor.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self(RxChannels::FAILSAFE_CHANNEL_VALUES)
-    }
-    #[must_use]
-    pub const fn from_channels(channels: [u16; Self::CHANNEL_COUNT]) -> Self {
-        Self(channels)
-    }
-}
-
-impl Default for RxChannels {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Index<usize> for RxChannels {
-    type Output = u16;
-
-    /// Access channel by index.
-    #[inline]
-    fn index(&self, index: usize) -> &u16 {
-        &self.0[index]
-    }
-}
-
-impl IndexMut<usize> for RxChannels {
-    /// Set channel by index.
-    #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut u16 {
-        &mut self.0[index]
-    }
-}
-
-impl Index<Range<usize>> for RxChannels {
-    type Output = [u16];
-
-    #[inline]
-    fn index(&self, index: Range<usize>) -> &[u16] {
-        &self.0[index]
-    }
-}
-
-impl IndexMut<Range<usize>> for RxChannels {
-    #[inline]
-    fn index_mut(&mut self, index: Range<usize>) -> &mut [u16] {
-        &mut self.0[index]
-    }
-}
-
-impl RxChannels {
-    /// Returns value of channel, or `RxChannel::LOW` if channel index invalid.
-    #[must_use]
-    pub fn channel(&self, channel_index: u8) -> u16 {
-        let index = usize::from(channel_index);
-        if index < Self::CHANNEL_COUNT {
-            return self.0[channel_index as usize];
-        }
-        RxChannel::LOW
-    }
-    #[must_use]
-    pub fn channels(&self) -> [u16; Self::CHANNEL_COUNT] {
-        self.0
-    }
-    pub fn set_channels_to_failsafe_values(&mut self) {
-        self.0 = Self::FAILSAFE_CHANNEL_VALUES;
-    }
-}
-
 #[cfg(test)]
 mod test_traits {
     use super::*;
@@ -261,6 +152,5 @@ mod test_traits {
     fn normal_types() {
         is_full::<RxChannelsLinkStatus>();
         is_full::<RxLinkStatus>();
-        is_full::<RxChannels>();
     }
 }

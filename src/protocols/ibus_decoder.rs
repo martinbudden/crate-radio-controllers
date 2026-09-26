@@ -110,7 +110,7 @@ impl IbusDecoder {
             let link_status = if channels[THROTTLE_CHANNEL] < 950 { RxLinkStatus::Failsafe } else { RxLinkStatus::Ok };
 
             let channels_link = RxChannelsLinkStatus { channels, link_status };
-            Some(RxFrame::ChannelsLink { channels_link })
+            Some(RxFrame::ChannelsLinkStatus { channels_link_status: channels_link })
         } else {
             None
         }
@@ -186,7 +186,7 @@ mod tests {
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
         let rx_frame = result.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLink { channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert_eq!(
                     channels_link.channels.channels()[..IbusDecoder::CHANNEL_COUNT],
                     input_channels,
@@ -250,7 +250,7 @@ mod tests {
         assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
         let rx_frame = decoded_frame.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLink { channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert_eq!(
                     channels_link.channels.channels()[..IbusDecoder::CHANNEL_COUNT],
                     [1500; IbusDecoder::CHANNEL_COUNT],
@@ -281,7 +281,7 @@ mod tests {
         assert!(result.is_some());
         let rx_frame = result.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLink { channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert!(
                     channels_link.link_status == RxLinkStatus::Failsafe,
                     "Decoder failed to identify internal receiver link failure!"

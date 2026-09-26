@@ -118,7 +118,7 @@ impl CrsfDecoder {
                     let link_status = RxLinkStatus::Ok;
                     let channels_link = RxChannelsLinkStatus { channels, link_status };
 
-                    return Some(RxFrame::ChannelsLink { channels_link });
+                    return Some(RxFrame::ChannelsLinkStatus { channels_link_status: channels_link });
                 }
                 return None;
             }
@@ -267,7 +267,7 @@ mod crsf_tests {
         let output_frame = result.unwrap();
 
         match output_frame {
-            RxFrame::ChannelsLink { channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert_eq!(
                     channels_link.channels.channels(),
                     input_channels,
@@ -322,7 +322,7 @@ mod crsf_tests {
         assert!(decoded_frame.is_some(), "Decoder failed to re-sync and recover after stream noise!");
         let rx_frame = decoded_frame.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLink { channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert_eq!(channels_link.channels.channels(), [1500; 16]);
             }
             _ => {
