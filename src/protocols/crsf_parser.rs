@@ -102,7 +102,7 @@ impl CrsfParser {
         packet[packet_length - 2]
     }
 
-    #[cfg(test)]
+    /*#[cfg(test)]
     fn _pack_crsf_payload(channels: RxChannels) -> CrsfPayload {
         let mut bits: u32 = 0;
         let mut bit_count: u32 = 0;
@@ -121,9 +121,9 @@ impl CrsfParser {
             }
         }
         bytes
-    }
+    }*/
 
-    /// Convert packed payload into channels.
+    /*/// Convert packed payload into channels.
     pub fn unpack_crsf_channels(data: &[u8]) -> (RxChannels, usize) {
         let mut result = RxChannels::default();
         let mut bit_offset = 0;
@@ -146,7 +146,7 @@ impl CrsfParser {
             count += 1;
         }
         (result, count)
-    }
+    }*/
 
     /// A CRSF packet always follows this pattern:
     /// `[Sync] [Length] [Type] [Payload...] [CRC]`

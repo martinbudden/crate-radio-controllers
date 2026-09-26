@@ -194,7 +194,7 @@ impl RxChannelRange {
     #[inline]
     pub fn is_active(&self, rx_channels: &RxChannels, aux_channel_index: u8) -> bool {
         let index = usize::from(aux_channel_index);
-        let channel_value = if index < rx_channels.len() { rx_channels[index] } else { RxChannel::LOW };
+        let channel_value = if index < RxChannels::CHANNEL_COUNT { rx_channels[index] } else { RxChannel::LOW };
 
         Self::is_range_active(channel_value, self.start, self.end)
     }

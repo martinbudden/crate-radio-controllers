@@ -1,4 +1,4 @@
-use crate::{RxChannelsLinkStatus, RxFrame, RxLinkStatus};
+use crate::{RxChannels, RxChannelsLinkStatus, RxFrame, RxLinkStatus};
 
 /// The iBUS protocol (by FlySky/Turnigy).
 /// It is not inverted and uses a straightforward "Sum of Bytes" checksum.
@@ -102,7 +102,7 @@ impl IbusDecoder {
         if complete {
             const THROTTLE_CHANNEL: usize = 2;
 
-            let mut channels = [0u16; RxChannelsLinkStatus::CHANNEL_COUNT];
+            let mut channels = RxChannels::default();
             // .as_chunks::<2>().0 gives a slice of [u8; 2] arrays
             for (ii, &chunk) in self.buffer.as_chunks::<2>().0.iter().enumerate() {
                 channels[ii] = u16::from_le_bytes(chunk);
@@ -188,7 +188,7 @@ mod tests {
         match rx_frame {
             RxFrame::ChannelsLink { channels_link } => {
                 assert_eq!(
-                    channels_link.channels[..IbusDecoder::CHANNEL_COUNT],
+                    channels_link.channels.channels()[..IbusDecoder::CHANNEL_COUNT],
                     input_channels,
                     "Decoded values do not match original inputs"
                 );
@@ -252,7 +252,7 @@ mod tests {
         match rx_frame {
             RxFrame::ChannelsLink { channels_link } => {
                 assert_eq!(
-                    channels_link.channels[..IbusDecoder::CHANNEL_COUNT],
+                    channels_link.channels.channels()[..IbusDecoder::CHANNEL_COUNT],
                     [1500; IbusDecoder::CHANNEL_COUNT],
                     "Recovered packet contained bad channel data"
                 );

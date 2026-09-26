@@ -1,3 +1,5 @@
+use core::ops::{Index, IndexMut, Range};
+
 use super::RxChannel;
 
 /// Crossfire compatible frame types.
@@ -139,6 +141,27 @@ impl RxChannelsLinkStatus {
     pub const CHANNEL_COUNT: usize = 16;
     pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
 
+    /// Constructor.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { channels: RxChannels::new(), link_status: RxLinkStatus::Ok }
+    }
+    #[must_use]
+    pub fn channel(&self, index: u8) -> u16 {
+        self.channels.channel(index)
+    }
+    pub fn set_channels_to_failsafe_values(&mut self) {
+        self.channels.set_channels_to_failsafe_values();
+    }
+}
+
+/// Array of RX channels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RxChannels([u16; Self::CHANNEL_COUNT]);
+
+impl RxChannels {
+    pub const CHANNEL_COUNT: usize = 16;
+
     pub const FAILSAFE_CHANNEL_VALUES: [u16; Self::CHANNEL_COUNT] = [
         RxChannel::MID, // Sticks default to MID.
         RxChannel::MID,
@@ -161,32 +184,72 @@ impl RxChannelsLinkStatus {
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
-        Self { channels: Self::FAILSAFE_CHANNEL_VALUES, link_status: RxLinkStatus::Ok }
+        Self(RxChannels::FAILSAFE_CHANNEL_VALUES)
+    }
+    #[must_use]
+    pub const fn from_channels(channels: [u16; Self::CHANNEL_COUNT]) -> Self {
+        Self(channels)
     }
 }
 
-impl RxChannelsLinkStatus {
-    /// Returns true if the frame is safe to use for flight control.
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        self.link_status == RxLinkStatus::Ok
+impl Default for RxChannels {
+    fn default() -> Self {
+        Self::new()
     }
-    /// Returns value of auxiliary channel, or `RxChannel::LOW` if channel index invalid.
+}
+
+impl Index<usize> for RxChannels {
+    type Output = u16;
+
+    /// Access channel by index.
+    #[inline]
+    fn index(&self, index: usize) -> &u16 {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<usize> for RxChannels {
+    /// Set channel by index.
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut u16 {
+        &mut self.0[index]
+    }
+}
+
+impl Index<Range<usize>> for RxChannels {
+    type Output = [u16];
+
+    #[inline]
+    fn index(&self, index: Range<usize>) -> &[u16] {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<Range<usize>> for RxChannels {
+    #[inline]
+    fn index_mut(&mut self, index: Range<usize>) -> &mut [u16] {
+        &mut self.0[index]
+    }
+}
+
+impl RxChannels {
+    /// Returns value of channel, or `RxChannel::LOW` if channel index invalid.
     #[must_use]
     pub fn channel(&self, channel_index: u8) -> u16 {
         let index = usize::from(channel_index);
         if index < Self::CHANNEL_COUNT {
-            return self.channels[channel_index as usize];
+            return self.0[channel_index as usize];
         }
         RxChannel::LOW
     }
+    #[must_use]
+    pub fn channels(&self) -> [u16; Self::CHANNEL_COUNT] {
+        self.0
+    }
     pub fn set_channels_to_failsafe_values(&mut self) {
-        self.channels = Self::FAILSAFE_CHANNEL_VALUES;
+        self.0 = Self::FAILSAFE_CHANNEL_VALUES;
     }
 }
-
-/// Array of RX channels.
-pub type RxChannels = [u16; RxChannelsLinkStatus::CHANNEL_COUNT];
 
 #[cfg(test)]
 mod test_traits {
@@ -198,5 +261,6 @@ mod test_traits {
     fn normal_types() {
         is_full::<RxChannelsLinkStatus>();
         is_full::<RxLinkStatus>();
+        is_full::<RxChannels>();
     }
 }

@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::{RxChannelsLinkStatus, RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannels, RxChannelsLinkStatus, RxFrame, RxFrameType, RxLinkStatus};
 
 use super::CrcDvbS2;
 
@@ -114,6 +114,7 @@ impl CrsfDecoder {
             if frame_type == RxFrameType::RcChannels as u8 {
                 if let Ok(channel_data) = self.buffer[1..23].try_into() {
                     Self::parse_rc_channels(&mut channels, channel_data);
+                    let channels = RxChannels::from_channels(channels);
                     let link_status = RxLinkStatus::Ok;
                     let channels_link = RxChannelsLinkStatus { channels, link_status };
 
@@ -268,7 +269,8 @@ mod crsf_tests {
         match output_frame {
             RxFrame::ChannelsLink { channels_link } => {
                 assert_eq!(
-                    channels_link.channels, input_channels,
+                    channels_link.channels.channels(),
+                    input_channels,
                     "Decoded values do not match original 11-bit input boundaries!"
                 );
             }
@@ -321,7 +323,7 @@ mod crsf_tests {
         let rx_frame = decoded_frame.unwrap();
         match rx_frame {
             RxFrame::ChannelsLink { channels_link } => {
-                assert_eq!(channels_link.channels, [1500; 16]);
+                assert_eq!(channels_link.channels.channels(), [1500; 16]);
             }
             _ => {
                 panic!("decoded to wrong frame type")

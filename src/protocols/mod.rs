@@ -1,7 +1,6 @@
 mod crc_dvb_s2;
 
 mod crsf_decoder;
-mod crsf_parser;
 mod crsf_radio;
 
 mod ibus_decoder;
@@ -9,8 +8,6 @@ mod ibus_radio;
 
 mod sbus_decoder;
 mod sbus_radio;
-
-mod protocol;
 
 pub(crate) use crc_dvb_s2::CrcDvbS2;
 
