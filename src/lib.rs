@@ -52,4 +52,4 @@ pub use rc_modes::{ModeActivationCondition, RcModes};
 pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
 pub use rx_config::{RadioType, RxConfig};
 pub use rx_frame::{RxFrame, RxLinkStatus};
-pub use rx_radio::{Eui48, Radio, RxRadio, RxRadioCommon};
+pub use rx_radio::{Radio, RxRadio};

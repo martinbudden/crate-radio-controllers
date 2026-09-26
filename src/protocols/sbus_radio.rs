@@ -1,11 +1,10 @@
 use super::{RadioSerial, RxProtocol, SbusDecoder, SbusFrame};
-use crate::{RxFrame, RxRadio, RxRadioCommon};
+use crate::{RxFrame, RxRadio};
 
 /// Ibus radio<br><br>
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusRadio {
-    common: RxRadioCommon,
     serial: RadioSerial,
     frame: SbusFrame,
     decoder: SbusDecoder,
@@ -23,7 +22,6 @@ impl SbusRadio {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            common: RxRadioCommon::new(),
             serial: RadioSerial::new(),
             frame: SbusFrame::new(),
             decoder: SbusDecoder::new(),

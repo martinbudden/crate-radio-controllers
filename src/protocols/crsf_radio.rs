@@ -1,5 +1,5 @@
 use super::{CrsfDecoder, CrsfFrame, CrsfParser, RadioSerial, RxProtocol};
-use crate::{RxChannel, RxFrame, RxRadio, RxRadioCommon};
+use crate::{RxChannel, RxFrame, RxRadio};
 
 /*pub struct CrsfReceiverXXXX<UART> {
     //shared: SerialReceiver<UART>,
@@ -9,7 +9,6 @@ use crate::{RxChannel, RxFrame, RxRadio, RxRadioCommon};
 /// Crossfire radio<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CrsfRadio {
-    common: RxRadioCommon,
     serial: RadioSerial,
     decoder: CrsfDecoder,
     frame: CrsfFrame,
@@ -70,7 +69,6 @@ impl CrsfRadio {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            common: RxRadioCommon::new(),
             serial: RadioSerial::new(),
             decoder: CrsfDecoder::new(),
             frame: CrsfFrame::new(),
@@ -127,7 +125,6 @@ impl RxProtocol for CrsfRadio {
         let time_now_us: u32 = 0; //time_us();
         if time_now_us > self.serial.start_time + CrsfRadio::TIME_NEEDED_PER_FRAME_US {
             self.serial.packet_index = 0;
-            self.common.dropped_packet_count += 1;
         }
 
         match self.serial.packet_index {
