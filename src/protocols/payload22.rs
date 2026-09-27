@@ -115,7 +115,6 @@ impl Payload22 {
 mod tests {
     use super::*;
 
-
     #[test]
     fn test_sbus_32bit_window_decoder() {
         // Establish an arbitrary, diverse set of test channels (values 0..2047)

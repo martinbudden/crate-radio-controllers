@@ -106,13 +106,12 @@ impl SbusDecoder {
             } else {
                 RxLinkStatus::Ok
             };
-            Some((channels, link_status ))
+            Some((channels, link_status))
         } else {
             None
         }
     }
 
-    #[allow(unused)]
     pub fn parse_packet(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<(RxChannels, RxLinkStatus)> {
         for byte in buffer {
             if let Some(result) = self.on_byte_received(*byte) {
@@ -135,4 +134,3 @@ mod test_traits {
         is_full::<SbusDecoder>();
     }
 }
-

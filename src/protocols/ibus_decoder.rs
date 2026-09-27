@@ -132,6 +132,39 @@ impl IbusDecoder {
         }
         None
     }
+
+    /// Helper function to build an IBUS frame.
+    #[must_use]
+    pub fn create_ibus_frame(channels: [u16; IbusDecoder::CHANNEL_COUNT]) -> [u8; Self::PACKET_LENGTH] {
+        let mut frame = [0u8; 32];
+        frame[0] = State::SIZE_BYTE;
+        frame[1] = State::COMMAND_BYTE;
+
+        /*// Inject the channel values as Little Endian bytes
+        for (ii, channel) in channels.iter().enumerate().take(IbusDecoder::CHANNEL_COUNT) {
+            let bytes = channel.to_le_bytes();
+            let offset = 2 + (ii * 2);
+            frame[offset] = bytes[0];
+            frame[offset + 1] = bytes[1];
+        }*/
+        // Split the frame into compile-time fixed [u8; 2] chunks
+        let (frame_chunks, _remainder) = frame[2..].as_chunks_mut::<2>();
+
+        // Zip and assign directly.
+        for (dst_channel, channel) in frame_chunks.iter_mut().zip(channels.iter().take(IbusDecoder::CHANNEL_COUNT)) {
+            *dst_channel = channel.to_le_bytes();
+        }
+
+        // Calculate Checksum: 0xFFFF - sum(bytes 0..30)
+        let mut checksum: u16 = 0xFFFF;
+        for frame in frame.iter().take(30) {
+            checksum -= u16::from(*frame);
+        }
+
+        frame[30..32].copy_from_slice(&checksum.to_le_bytes());
+
+        frame
+    }
 }
 
 #[cfg(test)]
@@ -153,53 +186,63 @@ mod tests {
 
     use super::*;
 
-    /// Helper function to build a valid IBUS frame array
-    fn create_valid_frame(channel_values: [u16; IbusDecoder::CHANNEL_COUNT]) -> [u8; 32] {
-        let mut frame = [0u8; 32];
-        frame[0] = 0x20; // Length
-        frame[1] = 0x40; // Command type
+    #[test]
+    fn example() {
+        let expected_channels = RxChannels::from_channels([
+            1500, 1500, 1100, 1500, // Roll, Pitch, Throttle, Yaw
+            1000, 2000, 1500, 1000, // AUX 1-4
+            1200, 1300, 1400, 1600, // AUX 5-8
+            1700, 1800, 1000, 1000, // AUX 9-12
+        ]);
 
-        // Inject the channel values as Little Endian bytes
-        for i in 0..IbusDecoder::CHANNEL_COUNT {
-            let offset = 2 + (i * 2);
-            let bytes = channel_values[i].to_le_bytes();
-            frame[offset] = bytes[0];
-            frame[offset + 1] = bytes[1];
+        // simulate byte stream from serial port using an array.
+        let byte_stream = [
+            0x20, 0x40, 0xDC, 0x05, 0xDC, 0x05, 0x4C, 0x04, 0xDC, 0x05, 0xE8, 0x03, 0xD0, 0x07, 0xDC, 0x05, 0xE8, 0x03,
+            0xB0, 0x04, 0x14, 0x05, 0x78, 0x05, 0x40, 0x06, 0xA4, 0x06, 0x08, 0x07, 0xD5, 0xF6,
+        ];
+
+        // decode the byte stream
+        let mut decoder = IbusDecoder::new();
+        let mut result = None;
+        for &byte in byte_stream.iter() {
+            result = decoder.on_byte_received(byte);
         }
 
-        // Calculate Checksum: 0xFFFF - sum(bytes 0..30)
-        let mut checksum: u16 = 0xFFFF;
-        for i in 0..30 {
-            checksum -= frame[i] as u16;
+        // deconstruct result and check it is correct
+        if let Some((channels, link_status)) = result {
+            assert_eq!(channels, expected_channels);
+            assert_eq!(link_status, RxLinkStatus::Ok);
+        } else {
+            panic!("decode failed");
         }
-
-        let cs_bytes = checksum.to_le_bytes();
-        frame[30] = cs_bytes[0];
-        frame[31] = cs_bytes[1];
-
-        frame
     }
 
     #[test]
     fn test_successful_decode() {
         let mut decoder = IbusDecoder::new();
 
-        // 1. Establish an arbitrary set of healthy receiver channel mappings
         let input_channels = [
             1500, 1500, 1100, 1500, // Roll, Pitch, Throttle, Yaw
             1000, 2000, 1500, 1000, // AUX 1-4
             1200, 1300, 1400, 1600, 1700, 1800, // Extra channels
         ];
 
-        let raw_stream = create_valid_frame(input_channels);
+        let byte_stream = IbusDecoder::create_ibus_frame(input_channels);
+        assert_eq!(
+            byte_stream,
+            [
+                0x20, 0x40, 0xDC, 0x05, 0xDC, 0x05, 0x4C, 0x04, 0xDC, 0x05, 0xE8, 0x03, 0xD0, 0x07, 0xDC, 0x05, 0xE8,
+                0x03, 0xB0, 0x04, 0x14, 0x05, 0x78, 0x05, 0x40, 0x06, 0xA4, 0x06, 0x08, 0x07, 0xD5, 0xF6
+            ]
+        );
 
-        // 2. Feed the stream into the state machine byte-by-byte
+        // Feed the stream into the state machine byte-by-byte
         let mut result = None;
-        for &byte in raw_stream.iter() {
+        for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
 
-        // 3. Assert the state machine accurately matched the complete packet
+        // Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
         let (channels, link_status) = result.unwrap();
         assert_eq!(
@@ -214,13 +257,13 @@ mod tests {
     fn test_corrupted_checksum_rejection() {
         let mut decoder = IbusDecoder::new();
         let input_channels = [1500; IbusDecoder::CHANNEL_COUNT];
-        let mut raw_stream = create_valid_frame(input_channels);
+        let mut byte_stream = IbusDecoder::create_ibus_frame(input_channels);
 
         // Corrupt a middle payload byte (byte index 5)
-        raw_stream[5] ^= 0xFF;
+        byte_stream[5] ^= 0xFF;
 
         let mut result = None;
-        for &byte in raw_stream.iter() {
+        for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
 
@@ -232,7 +275,7 @@ mod tests {
     fn test_invalid_header_recovery() {
         let mut decoder = IbusDecoder::new();
         let input_channels = [1500; IbusDecoder::CHANNEL_COUNT];
-        let valid_stream = create_valid_frame(input_channels);
+        let valid_stream = IbusDecoder::create_ibus_frame(input_channels);
 
         // Define our fixed noise sequence (6 bytes)
         let noise = [0x00, 0xFF, 0x20, 0x20, 0x41, 0x00];
@@ -272,10 +315,10 @@ mod tests {
         let mut failsafe_channels = [1500; IbusDecoder::CHANNEL_COUNT];
         failsafe_channels[2] = 900; // Drop channel 3 below 950 boundary
 
-        let raw_stream = create_valid_frame(failsafe_channels);
+        let byte_stream = IbusDecoder::create_ibus_frame(failsafe_channels);
 
         let mut result = None;
-        for &byte in raw_stream.iter() {
+        for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
 

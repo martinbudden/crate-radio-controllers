@@ -390,6 +390,27 @@ mod tests {
     }
 
     #[test]
+    fn example() {
+        let mut rc_modes = RcModes::default();
+
+        let mac_arm = ModeActivationCondition::from_range_mode_channel(
+            RxChannelRange::from_pwm(1500, 2000),
+            RcMode::ARM,
+            RxChannel::AUX1_U8,
+        );
+        rc_modes.set_mac(0, mac_arm);
+        rc_modes.analyze_macs();
+
+        let mut rx_channels = RxChannels::default();
+
+        rx_channels[RxChannel::AUX1] = 1750;
+        assert!(mac_arm.is_active(&rx_channels));
+
+        rx_channels[RxChannel::AUX1] = 1250;
+        assert!(!mac_arm.is_active(&rx_channels));
+    }
+
+    #[test]
     fn mac() {
         let mut rc_modes = RcModes::default();
 

@@ -1,23 +1,15 @@
 mod crc_dvb_s2;
 
-mod crsf_decoder;
-mod crsf_radio;
-
-mod ibus_decoder;
-mod ibus_radio;
-
-mod sbus_decoder;
-mod sbus_radio;
-
 mod payload22;
 
-pub(crate) use payload22::Payload22;
+mod crsf_decoder;
+mod ibus_decoder;
+mod sbus_decoder;
+
 pub(crate) use crc_dvb_s2::CrcDvbS2;
 
-pub(crate) use crsf_decoder::CrsfDecoder;
-pub(crate) use ibus_decoder::IbusDecoder;
-pub(crate) use sbus_decoder::SbusDecoder;
+pub(crate) use payload22::Payload22;
 
-pub use crsf_radio::CrsfRadio;
-pub use ibus_radio::IbusRadio;
-pub use sbus_radio::SbusRadio;
+pub use crsf_decoder::CrsfDecoder;
+pub use ibus_decoder::IbusDecoder;
+pub use sbus_decoder::SbusDecoder;

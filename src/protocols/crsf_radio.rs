@@ -1,5 +1,5 @@
 use super::CrsfDecoder;
-use crate::{RxFrame, RxRadio};
+use crate::RxFrame;
 
 /*pub struct CrsfReceiverXXXX<UART> {
     //shared: SerialReceiver<UART>,

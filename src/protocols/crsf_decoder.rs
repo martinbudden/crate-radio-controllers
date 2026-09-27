@@ -1,8 +1,6 @@
-#![allow(unused)]
-
 use crate::{RxChannels, RxFrame, RxFrameType, RxLinkStatus};
 
-use super::{CrcDvbS2,Payload22};
+use super::{CrcDvbS2, Payload22};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum State {
@@ -46,10 +44,10 @@ impl CrsfDecoder {
 
     pub const MAX_PACKET_SIZE: usize = 64;
 
-    /// Length of the bit-packed payload (16 channels * 11 bits = 176 bits = 22 bytes).
-    const RC_PAYLOAD_LENGTH: usize = 22;
-    pub(crate) const HALF_RC_PAYLOAD_LENGTH: usize = 11;
+    // Length of the bit-packed payload (16 channels * 11 bits = 176 bits = 22 bytes).
+    // const RC_PAYLOAD_LENGTH: usize = 22;
 
+    #[must_use]
     pub const fn new() -> Self {
         Self { state: State::WaitForSyncByte, buffer: [0u8; Self::MAX_PACKET_SIZE] }
     }
@@ -91,7 +89,7 @@ impl CrsfDecoder {
                 }
             }
             State::ValidateChecksum { length } => {
-                const BUFFER_SIZE: usize = 23;
+                // const BUFFER_SIZE: usize = 23;
                 // This byte is now the CRC byte
                 let received_crc = byte;
 
@@ -140,6 +138,7 @@ impl CrsfDecoder {
 
                 _ => Some(RxFrame::Unknown { frame_type: self.buffer[0] }),
             };
+            return rx_frame;
         }
 
         None
@@ -160,8 +159,6 @@ mod test_traits {
 
 #[cfg(test)]
 mod crsf_tests {
-    use crate::rx_frame;
-
     use super::*; // Assumes CrsfDecoder, CrsfFrame, and CRSF_PAYLOAD_LEN are in scope
 
     /// Standard CRSF CRC8 implementation (DVB-S2 variant, polynomial 0xD5)
@@ -251,6 +248,7 @@ mod crsf_tests {
                     expected_channels,
                     "Decoded values do not match original 11-bit input boundaries!"
                 );
+                assert_eq!(link_status, RxLinkStatus::Ok);
             }
             _ => {
                 panic!("decoded to wrong frame type")
@@ -302,6 +300,7 @@ mod crsf_tests {
         match rx_frame {
             RxFrame::ChannelsLinkStatus { channels, link_status } => {
                 assert_eq!(channels.channels(), [1500; 16]);
+                assert_eq!(link_status, RxLinkStatus::Ok);
             }
             _ => {
                 panic!("decoded to wrong frame type")
