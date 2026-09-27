@@ -42,13 +42,13 @@ impl Default for CrsfDecoder {
 }
 
 impl CrsfDecoder {
+    pub const CHANNEL_COUNT: usize = 16;
+
     pub const MAX_PACKET_SIZE: usize = 64;
 
-    /// Length of the bit-packed channels block (16 channels * 11 bits = 176 bits = 22 bytes).
-    pub const RC_PACKET_LENGTH: usize = 22;
-    pub(crate) const HALF_RC_PACKET_LENGTH: usize = 11;
-
-    pub const CHANNEL_COUNT: usize = 16;
+    /// Length of the bit-packed payload (16 channels * 11 bits = 176 bits = 22 bytes).
+    const RC_PAYLOAD_LENGTH: usize = 22;
+    pub(crate) const HALF_RC_PAYLOAD_LENGTH: usize = 11;
 
     pub const fn new() -> Self {
         Self { state: State::WaitForSyncByte, buffer: [0u8; Self::MAX_PACKET_SIZE] }
@@ -109,11 +109,11 @@ impl CrsfDecoder {
         };
 
         if complete {
-            let mut channels = [0; RxChannelsLinkStatus::CHANNEL_COUNT];
+            // Optimize for the RcChannels frame type.
             let frame_type = self.buffer[0];
             if frame_type == RxFrameType::RcChannels as u8 {
                 if let Ok(channel_data) = self.buffer[1..23].try_into() {
-                    Self::parse_rc_channels(&mut channels, channel_data);
+                    let channels = Self::parse_payload(channel_data);
                     let channels = RxChannels::from_channels(channels);
                     let link_status = RxLinkStatus::Ok;
                     let channels_link = RxChannelsLinkStatus { channels, link_status };
@@ -147,28 +147,31 @@ impl CrsfDecoder {
     }
 
     /// Fast 32-bit overlapping window channel extraction.
-    pub fn parse_rc_channels(channels: &mut [u16; Self::CHANNEL_COUNT], payload: &[u8; Self::RC_PACKET_LENGTH]) {
+    pub fn parse_payload(payload: &[u8; Self::RC_PAYLOAD_LENGTH]) -> [u16; Self::CHANNEL_COUNT] {
+        let mut channels = [0u16; Self::CHANNEL_COUNT];
         let chunks = payload.as_chunks::<11>().0;
 
-        Self::parse_8_rc_channels(&mut channels[0..8], &chunks[0]);
-        Self::parse_8_rc_channels(&mut channels[8..16], &chunks[1]);
+        Self::parse_payload_chunk(&mut channels[0..8], &chunks[0]);
+        Self::parse_payload_chunk(&mut channels[8..16], &chunks[1]);
+
+        channels
     }
 
     #[inline]
-    fn parse_8_rc_channels(out: &mut [u16], s: &[u8; Self::HALF_RC_PACKET_LENGTH]) {
-        let w0 = u32::from_le_bytes([s[0], s[1], s[2], s[3]]);
+    fn parse_payload_chunk(out: &mut [u16], chunk: &[u8; Self::HALF_RC_PAYLOAD_LENGTH]) {
+        let w0 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
         out[0] = (w0 & 0x7FF) as u16;
         out[1] = ((w0 >> 11) & 0x7FF) as u16;
 
-        let w1 = u32::from_le_bytes([s[2], s[3], s[4], s[5]]);
+        let w1 = u32::from_le_bytes([chunk[2], chunk[3], chunk[4], chunk[5]]);
         out[2] = ((w1 >> 6) & 0x7FF) as u16;
         out[3] = ((w1 >> 17) & 0x7FF) as u16;
 
-        let w2 = u32::from_le_bytes([s[5], s[6], s[7], s[8]]);
+        let w2 = u32::from_le_bytes([chunk[5], chunk[6], chunk[7], chunk[8]]);
         out[4] = ((w2 >> 4) & 0x7FF) as u16;
         out[5] = ((w2 >> 15) & 0x7FF) as u16;
 
-        let w3 = u32::from_le_bytes([s[8], s[9], s[10], 0]);
+        let w3 = u32::from_le_bytes([chunk[8], chunk[9], chunk[10], 0]);
         out[6] = ((w3 >> 2) & 0x7FF) as u16;
         out[7] = ((w3 >> 13) & 0x7FF) as u16;
     }
@@ -211,7 +214,7 @@ mod crsf_tests {
 
     /// Helper function to build a completely valid, binary-accurate CRSF packet.
     /// Packs 16 channels into 11-bit chunks, appends type headers, and stamps the CRC8 byte.
-    fn create_crsf_packet(input_channels: [u16; 16]) -> [u8; 26] {
+    fn create_crsf_stream(input_channels: [u16; 16]) -> [u8; 26] {
         let mut packet = [0u8; 26];
         packet[0] = 0xC8; // Address byte
         packet[1] = 24; // Length (1 byte Type + 22 bytes Payload + 1 byte CRC)
@@ -249,14 +252,20 @@ mod crsf_tests {
     fn test_successful_crsf_decode() {
         let mut decoder = CrsfDecoder::new();
 
-        // 1. Establish an arbitrary set of healthy channel mappings (within 0..2047 limits)
-        let input_channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
+        let channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
 
-        let raw_stream = create_crsf_packet(input_channels);
+        let crsf_stream = create_crsf_stream(channels);
+        assert_eq!(
+            crsf_stream,
+            [
+                0xc8, 0x18, 0x16, 0xe8, 0xe3, 0x2e, 0x2b, 0xa0, 0xff, 0x06, 0xb1, 0x03, 0x08, 0x80, 0xdc, 0x05, 0x9f,
+                0x34, 0x5b, 0xf0, 0x7f, 0x00, 0x24, 0x0c, 0xbe, 0x60
+            ]
+        );
 
         // Feed the stream into the state machine byte-by-byte
         let mut result = None;
-        for &byte in raw_stream.iter() {
+        for &byte in crsf_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
                 result = Some(frame); // Copy the reference data out safely for evaluation
             }
@@ -270,7 +279,7 @@ mod crsf_tests {
             RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
                 assert_eq!(
                     channels_link.channels.channels(),
-                    input_channels,
+                    channels,
                     "Decoded values do not match original 11-bit input boundaries!"
                 );
             }
@@ -284,14 +293,14 @@ mod crsf_tests {
     fn test_corrupted_crc_rejection() {
         let mut decoder = CrsfDecoder::new();
         let input_channels = [1000; 16];
-        let mut raw_stream = create_crsf_packet(input_channels);
+        let mut stream = create_crsf_stream(input_channels);
 
-        // Corrupt the final CRC byte intentionally
-        let last_idx = raw_stream.len() - 1;
-        raw_stream[last_idx] ^= 0x5A;
+        // Intentionally corrupt the final CRC byte.
+        let last_idx = stream.len() - 1;
+        stream[last_idx] ^= 0x5A;
 
         let mut result = None;
-        for &byte in raw_stream.iter() {
+        for &byte in stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
                 result = Some(frame);
             }
@@ -304,7 +313,7 @@ mod crsf_tests {
     fn test_noise_and_recovery() {
         let mut decoder = CrsfDecoder::new();
         let input_channels = [1500; 16];
-        let valid_packet = create_crsf_packet(input_channels);
+        let valid_packet = create_crsf_stream(input_channels);
 
         // Create a fixed stack noise prefix array (6 bytes)
         let noise = [0x00, 0xC7, 0xC8, 0x02, 0x16, 0xFF]; // Includes a false start 0xC8

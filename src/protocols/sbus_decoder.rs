@@ -23,6 +23,9 @@ impl Default for SbusDecoder {
 }
 
 impl SbusDecoder {
+    /// SBUS supports 18 channels, but we only use 16 of them.
+    pub const CHANNEL_COUNT: usize = 16;
+
     pub const PACKET_LENGTH: usize = 25;
     pub const HEADER_LENGTH: usize = 1;
     pub const PAYLOAD_LENGTH: usize = 22;
@@ -86,7 +89,7 @@ impl SbusDecoder {
         };
 
         if complete && let Ok(channel_data) = self.buffer[1..23].try_into() {
-            let channels = Self::parse_sbus_channels(&channel_data);
+            let channels = Self::parse_payload(&channel_data);
             let channels = RxChannels::from_channels(channels);
 
             let flags = self.buffer[23];
@@ -105,7 +108,7 @@ impl SbusDecoder {
     }
 
     #[allow(unused)]
-    pub fn parse(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<RxFrame> {
+    pub fn parse_packet(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<RxFrame> {
         for byte in buffer {
             if let Some(frame) = self.on_byte_received(*byte) {
                 return Some(frame);
@@ -120,43 +123,43 @@ impl SbusDecoder {
     ///
     /// Bitmasking: Every line ends with & 0x07FF. This ensures that even if bits "bleed" over from the next byte, only the 11 bits we care about are kept.
     /// Performance: On a typical 32-bit MCU , the compiler will optimize these into simple LDR, LSR/LSL, and AND instructions.
-    pub fn parse_sbus_channels(p: &[u8; 22]) -> [u16; 16] {
-        let mut channels = [0u16; 16];
+    pub fn parse_payload(payload: &[u8; Self::PAYLOAD_LENGTH]) -> [u16; Self::CHANNEL_COUNT] {
+        let mut channels = [0u16; Self::CHANNEL_COUNT];
 
         // .as_chunks::<11>().0 returns a slice of [u8; 11] arrays
-        let chunks = p.as_chunks::<11>().0;
+        let chunks = payload.as_chunks::<11>().0;
 
         // Process the first 11 bytes into channels 0..8
-        Self::parse_8_channels(&chunks[0], &mut channels[0..8]);
+        Self::parse_payload_chunk(&mut channels[0..8], &chunks[0]);
 
         // Process the next 11 bytes into channels 8..16
-        Self::parse_8_channels(&chunks[1], &mut channels[8..16]);
+        Self::parse_payload_chunk(&mut channels[8..16], &chunks[1]);
 
         channels
     }
 
     #[inline]
-    fn parse_8_channels(p: &[u8; 11], out: &mut [u16]) {
+    fn parse_payload_chunk(out: &mut [u16], chunk: &[u8; 11]) {
         // Slurp bytes in 32-bit windows using zero-overhead from_le_bytes
         // This allows the CPU to use 32-bit hardware registers and barrel shifters
 
         // Window 1: Bytes 0, 1, 2, 3 (Contains Ch 0, 1, and parts of 2)
-        let w0 = u32::from_le_bytes([p[0], p[1], p[2], p[3]]);
+        let w0 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
         out[0] = (w0 & 0x7FF) as u16;
         out[1] = ((w0 >> 11) & 0x7FF) as u16;
 
         // Window 2: Bytes 2, 3, 4, 5 (Contains Ch 2, 3, and parts of 4)
-        let w1 = u32::from_le_bytes([p[2], p[3], p[4], p[5]]);
+        let w1 = u32::from_le_bytes([chunk[2], chunk[3], chunk[4], chunk[5]]);
         out[2] = ((w1 >> 6) & 0x7FF) as u16;
         out[3] = ((w1 >> 17) & 0x7FF) as u16;
 
         // Window 3: Bytes 5, 6, 7, 8 (Contains Ch 4, 5, and parts of 6)
-        let w2 = u32::from_le_bytes([p[5], p[6], p[7], p[8]]);
+        let w2 = u32::from_le_bytes([chunk[5], chunk[6], chunk[7], chunk[8]]);
         out[4] = ((w2 >> 4) & 0x7FF) as u16;
         out[5] = ((w2 >> 15) & 0x7FF) as u16;
 
         // Window 4: Bytes 8, 9, 10, plus a trailing 0 padding byte
-        let w3 = u32::from_le_bytes([p[8], p[9], p[10], 0]);
+        let w3 = u32::from_le_bytes([chunk[8], chunk[9], chunk[10], 0]);
         out[6] = ((w3 >> 2) & 0x7FF) as u16;
         out[7] = ((w3 >> 13) & 0x7FF) as u16;
     }
@@ -202,7 +205,7 @@ mod tests {
 
     /// Safe helper function to pack a raw channel into 11-bit chunks manually.
     /// This gives us a 100% accurate, known input frame buffer for the decoder test.
-    fn generate_mock_sbus_buffer(input_channels: [u16; 16]) -> [u8; 22] {
+    fn generate_sbus_payload(input_channels: [u16; 16]) -> [u8; 22] {
         let mut buffer = [0u8; 22];
         let mut bit_bucket: u32 = 0;
         let mut bits_in_bucket: u32 = 0;
@@ -236,18 +239,21 @@ mod tests {
     #[test]
     fn test_sbus_32bit_window_decoder() {
         // Establish an arbitrary, diverse set of test channels (values 0..2047)
-        let expected_channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
+        let channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
 
-        // 1. Pack our known good values into a real 22-byte packed stream array
-        let packed_sbus_stream = generate_mock_sbus_buffer(expected_channels);
-
-        // 2. Pass the byte payload through your optimized chunks and 32-bit window algorithm
-        // Note: Replace `MyStruct::` with the correct namespace/struct where your method lives
-        let decoded_output = SbusDecoder::parse_sbus_channels(&packed_sbus_stream);
-
-        // 3. Assert the output matches exactly with zero data degradation
+        let sbus_payload = generate_sbus_payload(channels);
         assert_eq!(
-            decoded_output, expected_channels,
+            sbus_payload,
+            [
+                0xe8, 0xe3, 0x2e, 0x2b, 0xa0, 0xff, 0x06, 0xb1, 0x03, 0x08, 0x80, 0xdc, 0x05, 0x9f, 0x34, 0x5b, 0xf0,
+                0x7f, 0x00, 0x24, 0x0c, 0xbe
+            ]
+        );
+
+        let decoded_channels = SbusDecoder::parse_payload(&sbus_payload);
+
+        assert_eq!(
+            decoded_channels, channels,
             "The optimized 32-bit overlapping window bit shift algorithm misaligned channel data!"
         );
     }
@@ -258,18 +264,10 @@ mod tests {
         let max_channels = [2047u16; 16];
         let min_channels = [0u16; 16];
 
-        let max_buffer = generate_mock_sbus_buffer(max_channels);
-        let min_buffer = generate_mock_sbus_buffer(min_channels);
+        let max_payload = generate_sbus_payload(max_channels);
+        let min_payload = generate_sbus_payload(min_channels);
 
-        assert_eq!(
-            SbusDecoder::parse_sbus_channels(&max_buffer),
-            max_channels,
-            "Failed to decode max 11-bit boundaries"
-        );
-        assert_eq!(
-            SbusDecoder::parse_sbus_channels(&min_buffer),
-            min_channels,
-            "Failed to decode min 11-bit boundaries"
-        );
+        assert_eq!(SbusDecoder::parse_payload(&max_payload), max_channels, "Failed to decode max 11-bit boundaries");
+        assert_eq!(SbusDecoder::parse_payload(&min_payload), min_channels, "Failed to decode min 11-bit boundaries");
     }
 }
