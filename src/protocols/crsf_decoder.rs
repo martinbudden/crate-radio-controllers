@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::{RxChannels, RxChannelsLinkStatus, RxFrame, RxFrameType, RxLinkStatus};
+use crate::{RxChannels, RxFrame, RxFrameType, RxLinkStatus};
 
 use super::CrcDvbS2;
 
@@ -116,9 +116,8 @@ impl CrsfDecoder {
                     let channels = Self::parse_payload(channel_data);
                     let channels = RxChannels::from_channels(channels);
                     let link_status = RxLinkStatus::Ok;
-                    let channels_link = RxChannelsLinkStatus { channels, link_status };
 
-                    return Some(RxFrame::ChannelsLinkStatus { channels_link_status: channels_link });
+                    return Some(RxFrame::ChannelsLinkStatus { channels, link_status });
                 }
                 return None;
             }
@@ -252,9 +251,9 @@ mod crsf_tests {
     fn test_successful_crsf_decode() {
         let mut decoder = CrsfDecoder::new();
 
-        let channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
+        let expected_channels = [1000, 1500, 172, 2000, 111, 1890, 512, 1024, 1500, 992, 1234, 45, 2047, 0, 777, 1520];
 
-        let crsf_stream = create_crsf_stream(channels);
+        let crsf_stream = create_crsf_stream(expected_channels);
         assert_eq!(
             crsf_stream,
             [
@@ -276,10 +275,10 @@ mod crsf_tests {
         let output_frame = result.unwrap();
 
         match output_frame {
-            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
+            RxFrame::ChannelsLinkStatus { channels, link_status } => {
                 assert_eq!(
-                    channels_link.channels.channels(),
-                    channels,
+                    channels.channels(),
+                    expected_channels,
                     "Decoded values do not match original 11-bit input boundaries!"
                 );
             }
@@ -331,8 +330,8 @@ mod crsf_tests {
         assert!(decoded_frame.is_some(), "Decoder failed to re-sync and recover after stream noise!");
         let rx_frame = decoded_frame.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels_link_status: channels_link } => {
-                assert_eq!(channels_link.channels.channels(), [1500; 16]);
+            RxFrame::ChannelsLinkStatus { channels, link_status } => {
+                assert_eq!(channels.channels(), [1500; 16]);
             }
             _ => {
                 panic!("decoded to wrong frame type")

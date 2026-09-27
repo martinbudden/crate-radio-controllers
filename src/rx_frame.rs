@@ -1,9 +1,10 @@
-use super::{RxChannel, RxChannels};
+use super::RxChannels;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RxFrame {
     ChannelsLinkStatus {
-        channels_link_status: RxChannelsLinkStatus,
+        channels: RxChannels,
+        link_status: RxLinkStatus,
     },
     LinkStatisticsTx {
         rssi_dbm: u8,
@@ -109,39 +110,6 @@ impl RxLinkStatus {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxChannelsLinkStatus {
-    pub channels: RxChannels,
-    pub link_status: RxLinkStatus,
-}
-
-impl Default for RxChannelsLinkStatus {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RxChannelsLinkStatus {
-    // SBUS has 18 channels, but we only use 16 (the last two are digital channels with the two values 1000 or 2000).
-    // IBUS has 14 channels
-    // CRSF has 16 channels
-    pub const CHANNEL_COUNT: usize = 16;
-    pub const DEFAULT_CHANNEL_VALUE: u16 = RxChannel::LOW;
-
-    /// Constructor.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self { channels: RxChannels::new(), link_status: RxLinkStatus::Ok }
-    }
-    #[must_use]
-    pub fn channel(&self, index: u8) -> u16 {
-        self.channels.channel(index)
-    }
-    pub fn set_channels_to_failsafe_values(&mut self) {
-        self.channels.set_channels_to_failsafe_values();
-    }
-}
-
 #[cfg(test)]
 mod test_traits {
     use super::*;
@@ -150,7 +118,6 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full::<RxChannelsLinkStatus>();
         is_full::<RxLinkStatus>();
     }
 }
