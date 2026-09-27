@@ -3,13 +3,17 @@ use crate::{RxChannels, RxFrame, RxLinkStatus};
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum State {
     #[default]
-    WaitingForHeader,
-    CollectingPayload {
+    WaitForHeaderByte,
+    ReadPayload {
         index: usize,
     },
-    ValidatingFooter,
+    ValidateFooter,
 }
 
+impl State {
+    const HEADER_BYTE: u8 = 0x0F;
+    const FOOTER_BYTE: u8 = 0x00;
+}
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SbusDecoder {
     state: State,
@@ -29,11 +33,13 @@ impl SbusDecoder {
     pub const PACKET_LENGTH: usize = 25;
     pub const HEADER_LENGTH: usize = 1;
     pub const PAYLOAD_LENGTH: usize = 22;
+    pub const FLAGS_BYTE: usize = 23;
     const FRAME_LOST: u8 = 0x04;
     const FAILSAFE: u8 = 0x08;
 
+    #[must_use]
     pub const fn new() -> Self {
-        Self { state: State::WaitingForHeader, buffer: [0u8; Self::PACKET_LENGTH] }
+        Self { state: State::WaitForHeaderByte, buffer: [0u8; Self::PACKET_LENGTH] }
     }
 }
 
@@ -59,32 +65,32 @@ impl SbusDecoder {
         let mut complete = false;
 
         self.state = match core::mem::take(&mut self.state) {
-            State::WaitingForHeader => {
-                if byte == 0x0F {
+            State::WaitForHeaderByte => {
+                if byte == State::HEADER_BYTE {
                     // We have a valid header byte, so start collecting the payload.
                     self.buffer[0] = byte;
-                    State::CollectingPayload { index: 1 }
+                    State::ReadPayload { index: 1 }
                 } else {
-                    State::WaitingForHeader
+                    State::WaitForHeaderByte
                 }
             }
             // Collect the 22 bytes of payload.
-            State::CollectingPayload { index } => {
+            State::ReadPayload { index } => {
                 self.buffer[index] = byte;
                 let index = index + 1;
 
                 // When we have collected the payload, move onto the footer.
                 if index > Self::HEADER_LENGTH + Self::PAYLOAD_LENGTH {
-                    State::ValidatingFooter
+                    State::ValidateFooter
                 } else {
-                    State::CollectingPayload { index }
+                    State::ReadPayload { index }
                 }
             }
-            State::ValidatingFooter => {
-                if byte == 0x00 {
+            State::ValidateFooter => {
+                if byte == State::FOOTER_BYTE {
                     complete = true;
                 }
-                State::WaitingForHeader
+                State::WaitForHeaderByte
             }
         };
 
@@ -92,7 +98,7 @@ impl SbusDecoder {
             let channels = Self::parse_payload(&channel_data);
             let channels = RxChannels::from_channels(channels);
 
-            let flags = self.buffer[23];
+            let flags = self.buffer[Self::FLAGS_BYTE];
             // Check FAILSAFE flag first, since this indicates multiple lost frames
             let link_status = if flags & Self::FAILSAFE != 0 {
                 RxLinkStatus::Failsafe
@@ -101,9 +107,10 @@ impl SbusDecoder {
             } else {
                 RxLinkStatus::Ok
             };
-            return Some(RxFrame::ChannelsLinkStatus { channels , link_status });
+            Some(RxFrame::ChannelsLinkStatus { channels, link_status })
+        } else {
+            None
         }
-        None
     }
 
     #[allow(unused)]
@@ -193,6 +200,7 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
+        is_full::<State>();
         is_full::<SbusDecoder>();
     }
 }

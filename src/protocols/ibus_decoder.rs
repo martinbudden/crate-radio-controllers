@@ -32,19 +32,27 @@ impl State {
     const COMMAND_BYTE: u8 = 0x40;
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct IbusDecoder {
     state: State,
-    buffer: [u8; Self::BUFFER_SIZE],
+    buffer: [u8; Self::PAYLOAD_LENGTH],
+}
+
+impl Default for IbusDecoder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl IbusDecoder {
+    #[allow(unused)]
     pub const CHANNEL_COUNT: usize = 14;
-    const BUFFER_SIZE: usize = Self::CHANNEL_COUNT * 2;
+    pub const PACKET_LENGTH: usize = 32;
+    const PAYLOAD_LENGTH: usize = 28;
 
     #[must_use]
     pub const fn new() -> Self {
-        Self { state: State::WaitForSizeByte, buffer: [0; Self::BUFFER_SIZE] }
+        Self { state: State::WaitForSizeByte, buffer: [0u8; Self::PAYLOAD_LENGTH] }
     }
 }
 
@@ -113,6 +121,16 @@ impl IbusDecoder {
         } else {
             None
         }
+    }
+
+    #[allow(unused)]
+    pub fn parse_packet(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<RxFrame> {
+        for byte in buffer {
+            if let Some(frame) = self.on_byte_received(*byte) {
+                return Some(frame);
+            }
+        }
+        None
     }
 }
 
@@ -185,16 +203,13 @@ mod tests {
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
         let rx_frame = result.unwrap();
         match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status} => {
+            RxFrame::ChannelsLinkStatus { channels, link_status } => {
                 assert_eq!(
                     channels.channels()[..IbusDecoder::CHANNEL_COUNT],
                     input_channels,
                     "Decoded values do not match original inputs"
                 );
-                assert!(
-                    link_status == RxLinkStatus::Ok,
-                    "Decoder incorrectly flagged a healthy signal as a failsafe!"
-                );
+                assert!(link_status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
             }
             _ => {
                 panic!("Decoded to wrong frame type")
