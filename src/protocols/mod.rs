@@ -9,6 +9,9 @@ mod ibus_radio;
 mod sbus_decoder;
 mod sbus_radio;
 
+mod payload22;
+
+pub(crate) use payload22::Payload22;
 pub(crate) use crc_dvb_s2::CrcDvbS2;
 
 pub(crate) use crsf_decoder::CrsfDecoder;

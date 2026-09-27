@@ -23,8 +23,13 @@ impl SbusRadio {
 }
 
 impl RxRadio for SbusRadio {
+    #[inline]
     fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
-        self.decoder.on_byte_received(byte)
+        if let Some((channels, link_status)) = self.decoder.on_byte_received(byte) {
+            Some(RxFrame::ChannelsLinkStatus { channels, link_status })
+        } else {
+            None
+        }
     }
 }
 

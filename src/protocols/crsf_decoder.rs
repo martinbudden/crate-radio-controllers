@@ -2,7 +2,7 @@
 
 use crate::{RxChannels, RxFrame, RxFrameType, RxLinkStatus};
 
-use super::CrcDvbS2;
+use super::{CrcDvbS2,Payload22};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum State {
@@ -113,7 +113,7 @@ impl CrsfDecoder {
             let frame_type = self.buffer[0];
             if frame_type == RxFrameType::RcChannels as u8 {
                 if let Ok(channel_data) = self.buffer[1..23].try_into() {
-                    let channels = Self::parse_payload(channel_data);
+                    let channels = Payload22::parse_payload(channel_data);
                     let channels = RxChannels::from_channels(channels);
                     let link_status = RxLinkStatus::Ok;
 
@@ -143,36 +143,6 @@ impl CrsfDecoder {
         }
 
         None
-    }
-
-    /// Fast 32-bit overlapping window channel extraction.
-    pub fn parse_payload(payload: &[u8; Self::RC_PAYLOAD_LENGTH]) -> [u16; Self::CHANNEL_COUNT] {
-        let mut channels = [0u16; Self::CHANNEL_COUNT];
-        let chunks = payload.as_chunks::<11>().0;
-
-        Self::parse_payload_chunk(&mut channels[0..8], &chunks[0]);
-        Self::parse_payload_chunk(&mut channels[8..16], &chunks[1]);
-
-        channels
-    }
-
-    #[inline]
-    fn parse_payload_chunk(out: &mut [u16], chunk: &[u8; Self::HALF_RC_PAYLOAD_LENGTH]) {
-        let w0 = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        out[0] = (w0 & 0x7FF) as u16;
-        out[1] = ((w0 >> 11) & 0x7FF) as u16;
-
-        let w1 = u32::from_le_bytes([chunk[2], chunk[3], chunk[4], chunk[5]]);
-        out[2] = ((w1 >> 6) & 0x7FF) as u16;
-        out[3] = ((w1 >> 17) & 0x7FF) as u16;
-
-        let w2 = u32::from_le_bytes([chunk[5], chunk[6], chunk[7], chunk[8]]);
-        out[4] = ((w2 >> 4) & 0x7FF) as u16;
-        out[5] = ((w2 >> 15) & 0x7FF) as u16;
-
-        let w3 = u32::from_le_bytes([chunk[8], chunk[9], chunk[10], 0]);
-        out[6] = ((w3 >> 2) & 0x7FF) as u16;
-        out[7] = ((w3 >> 13) & 0x7FF) as u16;
     }
 }
 

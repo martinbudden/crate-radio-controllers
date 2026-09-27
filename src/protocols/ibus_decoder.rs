@@ -1,4 +1,4 @@
-use crate::{RxChannels, RxFrame, RxLinkStatus};
+use crate::{RxChannels, RxLinkStatus};
 
 /// The iBUS protocol (by FlySky/Turnigy).
 /// It is not inverted and uses a straightforward "Sum of Bytes" checksum.
@@ -59,7 +59,7 @@ impl IbusDecoder {
 impl IbusDecoder {
     /// Processes a single byte incoming from the UART interface.
     /// Returns `Some(&[u16; 14])` only when a valid frame passes checksum validation.
-    pub fn on_byte_received(&mut self, byte: u8) -> Option<RxFrame> {
+    pub fn on_byte_received(&mut self, byte: u8) -> Option<(RxChannels, RxLinkStatus)> {
         let mut complete = false;
 
         self.state = match core::mem::take(&mut self.state) {
@@ -117,17 +117,17 @@ impl IbusDecoder {
             }
             let link_status = if channels[THROTTLE_CHANNEL] < 950 { RxLinkStatus::Failsafe } else { RxLinkStatus::Ok };
 
-            Some(RxFrame::ChannelsLinkStatus { channels, link_status })
+            Some((channels, link_status))
         } else {
             None
         }
     }
 
     #[allow(unused)]
-    pub fn parse_packet(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<RxFrame> {
+    pub fn parse_packet(&mut self, buffer: &[u8; Self::PACKET_LENGTH]) -> Option<(RxChannels, RxLinkStatus)> {
         for byte in buffer {
-            if let Some(frame) = self.on_byte_received(*byte) {
-                return Some(frame);
+            if let Some(result) = self.on_byte_received(*byte) {
+                return Some(result);
             }
         }
         None
@@ -138,12 +138,12 @@ impl IbusDecoder {
 mod test_traits {
     use super::*;
 
-    fn is_full_eq<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
 
     #[test]
     fn normal_types() {
-        is_full_eq::<State>();
-        is_full_eq::<IbusDecoder>();
+        is_full::<State>();
+        is_full::<IbusDecoder>();
     }
 }
 
@@ -201,20 +201,13 @@ mod tests {
 
         // 3. Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
-        let rx_frame = result.unwrap();
-        match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status } => {
-                assert_eq!(
-                    channels.channels()[..IbusDecoder::CHANNEL_COUNT],
-                    input_channels,
-                    "Decoded values do not match original inputs"
-                );
-                assert!(link_status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
-            }
-            _ => {
-                panic!("Decoded to wrong frame type")
-            }
-        }
+        let (channels, link_status) = result.unwrap();
+        assert_eq!(
+            channels.channels()[..IbusDecoder::CHANNEL_COUNT],
+            input_channels,
+            "Decoded values do not match original inputs"
+        );
+        assert!(link_status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
     }
 
     #[test]
@@ -262,20 +255,13 @@ mod tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
-        let rx_frame = decoded_frame.unwrap();
-        match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status } => {
-                assert_eq!(
-                    channels.channels()[..IbusDecoder::CHANNEL_COUNT],
-                    [1500; IbusDecoder::CHANNEL_COUNT],
-                    "Recovered packet contained bad channel data"
-                );
-                assert_eq!(link_status, RxLinkStatus::Ok)
-            }
-            _ => {
-                panic!("decoded to incorrect frame type")
-            }
-        }
+        let (channels, link_status) = decoded_frame.unwrap();
+        assert_eq!(
+            channels.channels()[..IbusDecoder::CHANNEL_COUNT],
+            [1500; IbusDecoder::CHANNEL_COUNT],
+            "Recovered packet contained bad channel data"
+        );
+        assert_eq!(link_status, RxLinkStatus::Ok)
     }
 
     #[test]
@@ -294,18 +280,7 @@ mod tests {
         }
 
         assert!(result.is_some());
-        let rx_frame = result.unwrap();
-        match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status } => {
-                _ = channels;
-                assert!(
-                    link_status == RxLinkStatus::Failsafe,
-                    "Decoder failed to identify internal receiver link failure!"
-                );
-            }
-            _ => {
-                panic!("decoded to incorrect frame type")
-            }
-        }
+        let (_channels, link_status) = result.unwrap();
+        assert!(link_status == RxLinkStatus::Failsafe, "Decoder failed to identify internal receiver link failure!");
     }
 }
