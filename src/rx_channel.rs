@@ -8,55 +8,34 @@ use {
     serde::{Deserialize, Serialize},
 };
 
-/// RX channel constants.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RxChannel {}
+/// AETR (ailerons, elevators, throttle, rudder) ordering.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum RxChannel {
+    #[default]
+    Roll = 0,
+    Pitch = 1,
+    Throttle = 2,
+    Yaw = 3,
+    Aux1 = 4,
+    Aux2 = 5,
+    Aux3 = 6,
+    Aux4 = 7,
+    Aux5 = 8,
+    Aux6 = 9,
+    Aux7 = 10,
+    Aux8 = 11,
+    Aux9 = 12,
+    Aux10 = 13,
+    Aux11 = 14,
+    Aux12 = 15,
+    Aux13 = 16,
+    Aux14 = 17,
+    Aux15 = 18,
+    Aux16 = 19,
+}
 
-#[allow(missing_docs)]
 impl RxChannel {
-    // AETR (ailerons, elevators, throttle, rudder) ordering.
-    pub const ROLL: usize = 0;
-    pub const PITCH: usize = 1;
-    pub const THROTTLE: usize = 2;
-    pub const YAW: usize = 3;
-    pub const AUX1: usize = 4;
-    pub const AUX2: usize = 5;
-    pub const AUX3: usize = 6;
-    pub const AUX4: usize = 7;
-    pub const AUX5: usize = 8;
-    pub const AUX6: usize = 9;
-    pub const AUX7: usize = 10;
-    pub const AUX8: usize = 11;
-    pub const AUX9: usize = 12;
-    pub const AUX10: usize = 13;
-    pub const AUX11: usize = 14;
-    pub const AUX12: usize = 15;
-    pub const AUX13: usize = 16;
-    pub const AUX14: usize = 17;
-    pub const AUX15: usize = 18;
-    pub const AUX16: usize = 19;
-
-    pub const ROLL_U8: u8 = 0;
-    pub const PITCH_U8: u8 = 1;
-    pub const THROTTLE_U8: u8 = 2;
-    pub const YAW_U8: u8 = 3;
-    pub const AUX1_U8: u8 = 4;
-    pub const AUX2_U8: u8 = 5;
-    pub const AUX3_U8: u8 = 6;
-    pub const AUX4_U8: u8 = 7;
-    pub const AUX5_U8: u8 = 8;
-    pub const AUX6_U8: u8 = 9;
-    pub const AUX7_U8: u8 = 10;
-    pub const AUX8_U8: u8 = 11;
-    pub const AUX9_U8: u8 = 12;
-    pub const AUX10_U8: u8 = 13;
-    pub const AUX11_U8: u8 = 14;
-    pub const AUX12_U8: u8 = 15;
-    pub const AUX13_U8: u8 = 16;
-    pub const AUX14_U8: u8 = 17;
-    pub const AUX15_U8: u8 = 18;
-    pub const AUX16_U8: u8 = 19;
-
     // PWM values
     // Normal range is [1000, 2000]
     pub const MIN: u16 = 900;
@@ -192,8 +171,8 @@ impl RxChannelRange {
 
     #[must_use]
     #[inline]
-    pub fn is_active(&self, rx_channels: &RxChannels, aux_channel_index: u8) -> bool {
-        let index = usize::from(aux_channel_index);
+    pub fn is_active(&self, rx_channels: &RxChannels, channel: RxChannel) -> bool {
+        let index = channel as usize;
         let channel_value = if index < RxChannels::CHANNEL_COUNT { rx_channels[index] } else { RxChannel::LOW };
 
         Self::is_range_active(channel_value, self.start, self.end)
@@ -205,6 +184,7 @@ impl RxChannelRange {
         Self::is_range_active(channel_value, self.start, self.end)
     }*/
 }
+
 /// Array of RX channels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RxChannels([u16; Self::CHANNEL_COUNT]);
@@ -217,7 +197,7 @@ impl RxChannels {
         RxChannel::MID,
         RxChannel::LOW, // Throttle defaults to LOW.
         RxChannel::MID,
-        RxChannel::LOW,
+        RxChannel::LOW, // All AUX channels default to LOW.
         RxChannel::LOW,
         RxChannel::LOW,
         RxChannel::LOW,
@@ -236,6 +216,7 @@ impl RxChannels {
     pub const fn new() -> Self {
         Self(RxChannels::FAILSAFE_CHANNEL_VALUES)
     }
+
     #[must_use]
     pub const fn from_channels(channels: [u16; Self::CHANNEL_COUNT]) -> Self {
         Self(channels)
@@ -258,11 +239,29 @@ impl Index<usize> for RxChannels {
     }
 }
 
+impl Index<RxChannel> for RxChannels {
+    type Output = u16;
+
+    /// Access channel by index.
+    #[inline]
+    fn index(&self, index: RxChannel) -> &u16 {
+        &self.0[index as usize]
+    }
+}
+
 impl IndexMut<usize> for RxChannels {
     /// Set channel by index.
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut u16 {
         &mut self.0[index]
+    }
+}
+
+impl IndexMut<RxChannel> for RxChannels {
+    /// Set channel by index.
+    #[inline]
+    fn index_mut(&mut self, index: RxChannel) -> &mut u16 {
+        &mut self.0[index as usize]
     }
 }
 
@@ -283,19 +282,18 @@ impl IndexMut<Range<usize>> for RxChannels {
 }
 
 impl RxChannels {
-    /// Returns value of channel, or `RxChannel::LOW` if channel index invalid.
+    /// Returns value of channel, or `RxChannelEnum::LOW` if channel index invalid.
     #[must_use]
-    pub fn channel(&self, channel_index: u8) -> u16 {
-        let index = usize::from(channel_index);
-        if index < Self::CHANNEL_COUNT {
-            return self.0[channel_index as usize];
-        }
-        RxChannel::LOW
+    pub fn channel(&self, channel: RxChannel) -> u16 {
+        let index = channel as usize;
+        if index < Self::CHANNEL_COUNT { self.0[index] } else { RxChannel::LOW }
     }
+
     #[must_use]
     pub fn channels(&self) -> [u16; Self::CHANNEL_COUNT] {
         self.0
     }
+
     pub fn set_channels_to_failsafe_values(&mut self) {
         self.0 = Self::FAILSAFE_CHANNEL_VALUES;
     }

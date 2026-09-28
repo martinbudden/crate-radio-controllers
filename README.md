@@ -2,7 +2,7 @@
 
 ## Receivers
 
-Drivers for SBUS, IBUS, Crossfire/ExpressLRS receivers.
+Drivers for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
 
 ## Examples
 
@@ -53,21 +53,19 @@ let mut rc_modes = RcModes::default();
 let mut rx_channels = RxChannels::default();
 
 // set a MAC for arming that is true if AUX1 ins in the range 1500-2000.
-let mac_arm = ModeActivationCondition::from_range_mode_channel(
-    RxChannelRange::from_pwm(1500, 2000),
-    RcMode::ARM,
-    RxChannel::AUX1_U8,
-);
+let mac_arm = ModeActivationCondition::new(RcMode::ARM)
+    .with_channel(RxChannel::Aux1)
+    .with_range(RxChannelRange::from_pwm(1500, 2000));
 rc_modes.set_mac(0, mac_arm);
 // now all the MACs have been set, analyze them so they can be used.
 rc_modes.analyze_macs();
 
 // Set AUX1 to 1750 and confirm is arming is on.
-rx_channels[RxChannel::AUX1] = 1750;
+rx_channels[RxChannel::Aux1] = 1750;
 assert!(mac_arm.is_active(&rx_channels));
 
 // Set AUX1 to 1250 and confirm is arming is off.
-rx_channels[RxChannel::AUX1] = 1250;
+rx_channels[RxChannel::Aux1] = 1250;
 assert!(!mac_arm.is_active(&rx_channels));
 ```
 

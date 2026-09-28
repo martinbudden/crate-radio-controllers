@@ -13,10 +13,10 @@ impl From<RxChannels> for RcSticks {
     fn from(channels: RxChannels) -> Self {
         // Map channels in range [1000,2000] to floats in range [0,1] for throttle, [-1,1] for roll, pitch yaw
         RcSticks {
-            roll: (f32::from(channels[RxChannel::ROLL]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            pitch: (f32::from(channels[RxChannel::PITCH]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            yaw: (f32::from(channels[RxChannel::YAW]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
-            throttle: (f32::from(channels[RxChannel::THROTTLE]) - RxChannel::LOW_F32) / RxChannel::RANGE_F32,
+            roll: (f32::from(channels[RxChannel::Roll]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            pitch: (f32::from(channels[RxChannel::Pitch]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            yaw: (f32::from(channels[RxChannel::Yaw]) - RxChannel::MID_F32) / RxChannel::HALF_RANGE_F32,
+            throttle: (f32::from(channels[RxChannel::Throttle]) - RxChannel::LOW_F32) / RxChannel::RANGE_F32,
         }
     }
 }
@@ -107,10 +107,10 @@ mod tests {
     #[test]
     fn from_rx_channels() {
         let mut channels = RxChannels::default();
-        channels[RxChannel::ROLL] = 1250;
-        channels[RxChannel::PITCH] = 1500;
-        channels[RxChannel::YAW] = 1750;
-        channels[RxChannel::THROTTLE] = 1000;
+        channels[RxChannel::Roll] = 1250;
+        channels[RxChannel::Pitch] = 1500;
+        channels[RxChannel::Yaw] = 1750;
+        channels[RxChannel::Throttle] = 1000;
 
         // maps [1000, 2000] to [-1.0, 1.0] for roll, pitch, yaw, [0.0, 1.0] for throttle
         let rc_sticks = RcSticks::from(channels);
@@ -119,10 +119,10 @@ mod tests {
         assert_eq!(0.5, rc_sticks.yaw);
         assert_eq!(0.0, rc_sticks.throttle);
 
-        channels[RxChannel::THROTTLE] = 1250;
+        channels[RxChannel::Throttle] = 1250;
         let rc_sticks = RcSticks::from(channels);
         assert_eq!(0.25, rc_sticks.throttle);
-        channels[RxChannel::THROTTLE] = 1750;
+        channels[RxChannel::Throttle] = 1750;
         let rc_sticks = RcSticks::from(channels);
         assert_eq!(0.75, rc_sticks.throttle);
     }

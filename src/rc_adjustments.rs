@@ -43,6 +43,12 @@ impl RcAdjustmentRange {
             adjustment_scale: 0,
         }
     }
+    /// Set the range of a newly constructed `RcAdjustmentRange`.
+    #[must_use]
+    pub const fn with_range(mut self, range: RxChannelRange) -> Self {
+        self.range = range;
+        self
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
