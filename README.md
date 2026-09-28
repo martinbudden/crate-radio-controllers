@@ -2,7 +2,11 @@
 
 ## Receivers
 
-Drivers for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
+Implements decoders for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
+
+`radio-controllers` also implements Betaflight compatible Mode Activation Conditions (MACs),
+whereby a mode can be activated when a channel is in a given range. It also has logic
+to activate a mode when a combination of channels has a combination of values.
 
 ## Examples
 
@@ -42,29 +46,42 @@ if let Some((channels, link_status)) = result {
 
 ### Mode activation conditions
 
-This example shows setting a `mac_arm` mode activation condition, on channel `AUX1`.
+This example shows setting a mode activation conditions for:
 
-It is set so that that if `AUX1` is in the range 1500-2000, arming is on.
+* Arming on channel `AUX1`, values 1500-2000
+* Horizon mode on channel `AUX2`, values 1250-1750
+* Angle mode on channel `AUX2`, values 1750-2000
 
 ```rust
 use radio_controllers::{ModeActivationCondition, RcMode, RcModes, RxChannel, RxChannels, RxChannelRange};
 
 let mut rc_modes = RcModes::default();
-let mut rx_channels = RxChannels::default();
 
-// set a MAC for arming that is true if AUX1 ins in the range 1500-2000.
 let mac_arm = ModeActivationCondition::new(RcMode::Arm)
     .with_channel(RxChannel::Aux1)
     .with_range(RxChannelRange::from_pwm(1500, 2000));
-rc_modes.set_mac(0, mac_arm);
 
-// Set AUX1 channel to 1750 and confirm is arming is on.
+rc_modes.push_mac(mac_arm);
+let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
+    .with_channel(RxChannel::Aux2)
+    .with_range(RxChannelRange::from_pwm(1250, 1750));
+rc_modes.push_mac(mac_horizon);
+
+let mac_angle = ModeActivationCondition::new(RcMode::Angle)
+    .with_channel(RxChannel::Aux2)
+    .with_range(RxChannelRange::from_pwm(1750, 2000));
+rc_modes.push_mac(mac_angle);
+
+let mut rx_channels = RxChannels::default();
+
 rx_channels[RxChannel::Aux1] = 1750;
 assert!(mac_arm.is_active(&rx_channels));
 
-// Set AUX1 channel to 1250 and confirm is arming is off.
 rx_channels[RxChannel::Aux1] = 1250;
 assert!(!mac_arm.is_active(&rx_channels));
+
+rx_channels[RxChannel::Aux2] = 1800;
+assert!(mac_angle.is_active(&rx_channels));
 ```
 
 ## Original implementation

@@ -1,4 +1,6 @@
-use super::{RcMode, RcModeLogic, RxChannel, RxChannelRange, RxChannels};
+use super::{
+    ModeActivationCondition, ModeActivationConditions, RcMode, RcModeLogic, RxChannel, RxChannelRange, RxChannels,
+};
 
 use simple_bitset::BitSet64;
 
@@ -10,87 +12,6 @@ use {
     serde::{Deserialize, Serialize},
 };
 
-/// Mode Activation Condition (MAC).<br><br>
-///
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
-pub struct ModeActivationCondition {
-    pub mode_id: RcMode,
-    pub mode_logic: RcModeLogic,
-    pub channel: RxChannel,
-    pub range: RxChannelRange,
-    pub linked_to: u8,
-}
-
-#[cfg(feature = "storage")]
-impl PostcardValue<'_> for ModeActivationCondition {}
-
-impl Default for ModeActivationCondition {
-    fn default() -> Self {
-        Self::new(RcMode::Arm)
-    }
-}
-
-impl ModeActivationCondition {
-    /// Constructor.
-    #[must_use]
-    pub const fn new(mode_id: RcMode) -> Self {
-        Self {
-            mode_id,
-            mode_logic: RcModeLogic::Or,
-            channel: RxChannel::Aux1,
-            range: RxChannelRange::new(),
-            linked_to: 0,
-        }
-    }
-    /// Set the channel of a newly constructed MAC.
-    #[must_use]
-    pub const fn with_channel(mut self, channel: RxChannel) -> Self {
-        self.channel = channel;
-        self
-    }
-    /// Set the range of a newly constructed MAC.
-    #[must_use]
-    pub const fn with_range(mut self, range: RxChannelRange) -> Self {
-        self.range = range;
-        self
-    }
-    /// Set the mode id of a newly constructed MAC.
-    #[must_use]
-    pub const fn with_mode_id(mut self, mode_id: RcMode) -> Self {
-        self.mode_id = mode_id;
-        self
-    }
-    /// Set the mode logic of a newly constructed MAC.
-    #[must_use]
-    pub const fn with_mode_logic(mut self, mode_logic: RcModeLogic) -> Self {
-        self.mode_logic = mode_logic;
-        self
-    }
-    /// Set the linked to of a newly constructed MAC.
-    #[must_use]
-    pub const fn with_linked_to(mut self, linked_to: u8) -> Self {
-        self.linked_to = linked_to;
-        self
-    }
-}
-
-impl ModeActivationCondition {
-    /// Sets `range`, `mode_id`, and `aux_channel_index`.
-    pub fn set(&mut self, range: RxChannelRange, mode_id: RcMode, channel: RxChannel) {
-        self.range = range;
-        self.mode_id = mode_id;
-        self.channel = channel;
-    }
-    #[must_use]
-    #[inline]
-    pub fn is_active(&self, channels: &RxChannels) -> bool {
-        //let channel_value: u16 = rx_frame.auxiliary_channel(self.aux_channel_index);
-        //RxChannelRange::is_range_active(channel_value, self.range.start, self.range.end)
-        self.range.is_active(channels, self.channel)
-    }
-}
-
 /// Radio control modes.<br><br>
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
@@ -99,9 +20,9 @@ pub struct RcModes {
     pub linked_mac_count: usize,
     pub active_modes: BitSet64,
     pub sticky_modes_was_ever_disabled: BitSet64,
-    pub active_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-    pub linked_macs: [u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-    pub macs: [Option<ModeActivationCondition>; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+    pub active_macs: [u8; ModeActivationConditions::COUNT],
+    pub linked_macs: [u8; ModeActivationConditions::COUNT],
+    pub macs: ModeActivationConditions,
 }
 
 #[cfg(feature = "storage")]
@@ -114,8 +35,6 @@ impl Default for RcModes {
 }
 
 impl RcModes {
-    pub const MAX_MODE_ACTIVATION_CONDITION_COUNT: usize = 20;
-
     /// Constructor.
     #[must_use]
     pub const fn new() -> Self {
@@ -124,36 +43,25 @@ impl RcModes {
             linked_mac_count: 0,
             active_modes: BitSet64::new(),
             sticky_modes_was_ever_disabled: BitSet64::new(),
-            active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            macs: [None; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
+            active_macs: [0u8; ModeActivationConditions::COUNT],
+            linked_macs: [0u8; ModeActivationConditions::COUNT],
+            macs: ModeActivationConditions::new(),
         }
     }
 
-    /// Constructor with a single MAC for ARM mode on AUX1.
+    /// Add a single MAC for ARM mode on AUX1 to newly constructed MAC.
     #[must_use]
-    pub fn with_mac_arm() -> Self {
-        let mut macs = [None; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT];
-        macs[0] = Some(
-            ModeActivationCondition::new(RcMode::Arm)
-                .with_channel(RxChannel::Aux1)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH)),
-        );
+    pub fn with_mac_arm(mut self) -> Self {
+        let mac = ModeActivationCondition::new(RcMode::Arm)
+            .with_channel(RxChannel::Aux1)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        let mut this = RcModes {
-            active_mac_count: 0,
-            linked_mac_count: 0,
-            active_modes: BitSet64::new(),
-            sticky_modes_was_ever_disabled: BitSet64::new(),
-            active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            macs,
-        };
-        this.analyze_macs();
-        this
+        self.analyze_macs();
+        self
     }
 
-    /// Constructor with a set of conventional MACs for common modes:
+    /// Add a set of conventional MACs for common modes to a newly constructed MAC:
     /// - `ARM` on `AUX1`
     /// - `HORIZON` on `AUX2` mid-low to mid-high
     /// - `ANGLE` on `AUX2` mid-high to high
@@ -161,68 +69,55 @@ impl RcModes {
     /// - `CRASH_FLIP` on `AUX4`
     /// - `GPS_RESCUE` on `AUX5`
     #[must_use]
-    pub fn with_macs_conventional() -> Self {
-        let mut macs = [None; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT];
-        macs[0] = Some(
-            ModeActivationCondition::new(RcMode::Arm)
-                .with_channel(RxChannel::Aux1)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH)),
-        );
+    pub fn with_macs_conventional(mut self) -> Self {
+        let mac = ModeActivationCondition::new(RcMode::Arm)
+            .with_channel(RxChannel::Aux1)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        macs[1] = Some(
-            ModeActivationCondition::new(RcMode::Horizon)
-                .with_channel(RxChannel::Aux2)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID_LOW, RxChannel::MID_HIGH)),
-        );
+        let mac = ModeActivationCondition::new(RcMode::Horizon)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID_LOW, RxChannel::MID_HIGH));
+        self.macs.push_if_space_available(mac);
 
-        macs[2] = Some(
-            ModeActivationCondition::new(RcMode::Angle)
-                .with_channel(RxChannel::Aux2)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID_HIGH, RxChannel::HIGH)),
-        );
+        let mac = ModeActivationCondition::new(RcMode::Angle)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID_HIGH, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        macs[3] = Some(
-            ModeActivationCondition::new(RcMode::BeeperOn)
-                .with_channel(RxChannel::Aux3)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH)),
-        );
+        let mac = ModeActivationCondition::new(RcMode::BeeperOn)
+            .with_channel(RxChannel::Aux3)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        macs[4] = Some(
-            ModeActivationCondition::new(RcMode::CrashFlip)
-                .with_channel(RxChannel::Aux4)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH)),
-        );
+        let mac = ModeActivationCondition::new(RcMode::CrashFlip)
+            .with_channel(RxChannel::Aux4)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        macs[5] = Some(
-            ModeActivationCondition::new(RcMode::GpsRescue)
-                .with_channel(RxChannel::Aux5)
-                .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH)),
-        );
+        let mac = ModeActivationCondition::new(RcMode::GpsRescue)
+            .with_channel(RxChannel::Aux5)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
+        self.macs.push_if_space_available(mac);
 
-        let mut this = RcModes {
-            active_mac_count: 0,
-            linked_mac_count: 0,
-            active_modes: BitSet64::new(),
-            sticky_modes_was_ever_disabled: BitSet64::new(),
-            active_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            linked_macs: [0u8; Self::MAX_MODE_ACTIVATION_CONDITION_COUNT],
-            macs,
-        };
-        this.analyze_macs();
-        this
+        self.analyze_macs();
+        self
     }
 }
 
 impl RcModes {
     #[must_use]
     pub fn mac(&self, index: usize) -> Option<ModeActivationCondition> {
-        if index < Self::MAX_MODE_ACTIVATION_CONDITION_COUNT { self.macs[index] } else { None }
+        if index < ModeActivationConditions::COUNT { self.macs[index] } else { None }
     }
 
     pub fn set_mac(&mut self, index: usize, mac: ModeActivationCondition) {
-        if index < Self::MAX_MODE_ACTIVATION_CONDITION_COUNT {
+        if index < ModeActivationConditions::COUNT {
             self.macs[index] = Some(mac);
         }
+    }
+    pub fn push_mac(&mut self, mac: ModeActivationCondition) {
+        self.macs.push_if_space_available(mac);
     }
 
     #[must_use]
@@ -357,19 +252,10 @@ mod test_traits {
 
     #[test]
     fn normal_types() {
-        is_full::<ModeActivationCondition>();
         is_full::<RcModes>();
-    }
-    #[cfg(feature = "serde")]
-    #[test]
-    fn serde_types() {
-        is_serde::<ModeActivationCondition>();
+        #[cfg(feature = "serde")]
         is_serde::<RcModes>();
-    }
-    #[cfg(feature = "storage")]
-    #[test]
-    fn storage_types() {
-        is_storage::<ModeActivationCondition>();
+        #[cfg(feature = "storage")]
         is_storage::<RcModes>();
     }
 }
@@ -393,7 +279,16 @@ mod tests {
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(1500, 2000));
 
-        rc_modes.set_mac(0, mac_arm);
+        rc_modes.push_mac(mac_arm);
+        let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(1250, 1750));
+        rc_modes.push_mac(mac_horizon);
+
+        let mac_angle = ModeActivationCondition::new(RcMode::Angle)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(1750, 2000));
+        rc_modes.push_mac(mac_angle);
 
         let mut rx_channels = RxChannels::default();
 
@@ -402,6 +297,9 @@ mod tests {
 
         rx_channels[RxChannel::Aux1] = 1250;
         assert!(!mac_arm.is_active(&rx_channels));
+
+        rx_channels[RxChannel::Aux2] = 1800;
+        assert!(mac_angle.is_active(&rx_channels));
     }
 
     #[test]
@@ -411,11 +309,11 @@ mod tests {
         let mac_arm = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        rc_modes.set_mac(0, mac_arm);
+        rc_modes.push_mac(mac_arm);
         let mac_angle = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1000, 1250));
-        rc_modes.set_mac(1, mac_angle);
+        rc_modes.push_mac(mac_angle);
         rc_modes.analyze_macs();
 
         let mut rx_channels = RxChannels::default();
@@ -437,12 +335,12 @@ mod tests {
 
     #[test]
     fn mac_armed() {
-        let mut rc_modes = RcModes::with_mac_arm();
+        let mut rc_modes = RcModes::new().with_mac_arm();
 
         let mac_angle = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1000, 1250));
-        rc_modes.set_mac(1, mac_angle);
+        rc_modes.push_mac(mac_angle);
         rc_modes.analyze_macs();
 
         let mut rx_channels = RxChannels::default();

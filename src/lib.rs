@@ -23,6 +23,7 @@
 mod macros;
 
 mod controls;
+mod mode_activation_condition;
 mod protocols;
 mod rates;
 mod rc_adjustments;
@@ -37,12 +38,13 @@ pub use rates::{Rates, RatesConfig, RatesType, ThrottleLimitType};
 
 pub use protocols::{CrsfDecoder, IbusDecoder, SbusDecoder};
 
+pub use mode_activation_condition::{ModeActivationCondition, ModeActivationConditions};
 pub use rc_adjustments::{
     RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,
     RcTimedAdjustmentState,
 };
 pub use rc_mode::{RcMode, RcModeDescriptor, RcModeLogic};
-pub use rc_modes::{ModeActivationCondition, RcModes};
+pub use rc_modes::RcModes;
 
 pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
 pub use rx_frame::{RxFrame, RxFrameType, RxLinkStatus};
