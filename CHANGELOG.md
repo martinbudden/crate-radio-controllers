@@ -13,12 +13,41 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Added
 
-- support for continuous integration.
+- support for Continuous Integration.
+- Added `RxFrameType`.
+- Added `RcModeLogic`
+- Added CRSF decoder.
+- Added IBus Decoder.
+- Added `ModeActivationConditions` pseudo-array.
 
 ### Changed
 
-- split `serde` feature into `serde` and `storage`.
-- updated to Rust version 1.89.
+- Split `serde` feature into `serde` and `storage`.
+- Updated to Rust version 1.89.
+- Changed `RxChannel` from `struct` to `enum`.
+- Improved `ModeActivationCondition` constructors.
+- Changed IBUS and SBUS `on_byte_received` to return `Option<(RxChannels, RxLinkStatus)>`.
+- Split common payload parsing out of SBUS and CRSF.
+- Made SBUS and IBUS decoders more consistent
+- Changed `RxChannels` from `array` to `struct` pseudo-array.
+- Changed to use discriminated `enum` for `RxFrame`.
+- `Radio` `on_byte_received` now returns Option.
+- Improved `parse_sbus_channels`.
+- Updated Ibus and Sbus decoder state machines.
+- Split structs into separate modules.
+- Improved build support.
+- Rearranged directory structure.
+- Split `serde` feature into `serde` and `storage`.
+- Updated `crc`.
+
+### Removed
+
+- Got rid of all the configuration structs and moved them to Protoflight.
+- Got rid of `RxRadio` trait.
+- Got rid of `RxChannelsLink` struct.
+- Got rid of a lot of unneeded code.
+- Removed `RxRadioCommon`.
+- Removed dependency on embassy.
 
 ## [0.1.7] - 2026-09-01
 
