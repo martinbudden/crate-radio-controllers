@@ -105,22 +105,23 @@ impl ModeActivationConditions {
     /// This function is **O(N)**, but that is fine, since MACs are only added at initialization, not in RX task loop.
     /// # Errors
     /// Returns `Ok(usize)` with the slot index on success, or `Err(ModeActivationCondition)` if full.
-    pub fn push(&mut self, mac: ModeActivationCondition) -> Result<usize, ModeActivationCondition> {
-        for (i, slot) in self.0.iter_mut().enumerate() {
+    pub fn push(&mut self, mac: ModeActivationCondition) -> Result<u8, ModeActivationCondition> {
+        for (ii, slot) in self.0.iter_mut().enumerate() {
             if slot.is_none() {
                 *slot = Some(mac);
-                return Ok(i);
+                #[allow(clippy::cast_possible_truncation)]
+                return Ok(ii as u8);
             }
         }
         // Return the condition back to the caller if there's no room
         Err(mac)
     }
-    /// Appends an item to the first available slot.
+    /*/// Appends an item to the first available slot.
     /// If the container is full, the item is silently ignored.
     #[inline]
     pub fn push_if_space_available(&mut self, mac: ModeActivationCondition) {
         let _ = self.push(mac);
-    }
+    }*/
 }
 
 #[cfg(feature = "storage")]

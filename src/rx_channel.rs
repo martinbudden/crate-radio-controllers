@@ -217,7 +217,7 @@ impl RxChannelRange {
     }*/
 }
 
-/// Array of RX channels.
+/// Array of 16 RX channels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RxChannels([u16; Self::CHANNEL_COUNT]);
 

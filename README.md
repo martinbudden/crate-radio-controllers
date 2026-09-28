@@ -60,8 +60,8 @@ let mut rc_modes = RcModes::default();
 let mac_arm = ModeActivationCondition::new(RcMode::Arm)
     .with_channel(RxChannel::Aux1)
     .with_range(RxChannelRange::from_pwm(1500, 2000));
-
 rc_modes.push_mac(mac_arm);
+
 let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
     .with_channel(RxChannel::Aux2)
     .with_range(RxChannelRange::from_pwm(1250, 1750));

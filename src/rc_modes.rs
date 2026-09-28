@@ -55,9 +55,8 @@ impl RcModes {
         let mac = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
-        self.analyze_macs();
         self
     }
 
@@ -73,34 +72,33 @@ impl RcModes {
         let mac = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::Horizon)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID_LOW, RxChannel::MID_HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID_HIGH, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::BeeperOn)
             .with_channel(RxChannel::Aux3)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::CrashFlip)
             .with_channel(RxChannel::Aux4)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::GpsRescue)
             .with_channel(RxChannel::Aux5)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.macs.push_if_space_available(mac);
+        self.push_mac(mac);
 
-        self.analyze_macs();
         self
     }
 }
@@ -117,7 +115,15 @@ impl RcModes {
         }
     }
     pub fn push_mac(&mut self, mac: ModeActivationCondition) {
-        self.macs.push_if_space_available(mac);
+        if let Ok(index) = self.macs.push(mac) {
+            if mac.linked_to != 0 {
+                self.linked_macs[self.linked_mac_count] = index;
+                self.linked_mac_count += 1;
+            } else {
+                self.active_macs[self.active_mac_count] = index;
+                self.active_mac_count += 1;
+            }
+        }
     }
 
     #[must_use]
@@ -278,8 +284,8 @@ mod tests {
         let mac_arm = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(1500, 2000));
-
         rc_modes.push_mac(mac_arm);
+
         let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1250, 1750));
