@@ -18,10 +18,10 @@ let expected_channels = RxChannels::from_channels([
     1700, 1800, 1000, 1000, // AUX 9-12
 ]);
 
-// simulate byte stream from serial port using an array.
+// simulate a byte stream from the serial port using an array.
 let byte_stream = [
-    0x20, 0x40, 0xDC, 0x05, 0xDC, 0x05, 0x4C, 0x04, 0xDC, 0x05, 0xE8, 0x03, 0xD0, 0x07, 0xDC, 0x05, 0xE8, 0x03,
-    0xB0, 0x04, 0x14, 0x05, 0x78, 0x05, 0x40, 0x06, 0xA4, 0x06, 0x08, 0x07, 0xD5, 0xF6,
+    0x20, 0x40, 0xDC, 0x05, 0xDC, 0x05, 0x4C, 0x04, 0xDC, 0x05, 0xE8, 0x03, 0xD0, 0x07, 0xDC, 0x05,
+    0xE8, 0x03, 0xB0, 0x04, 0x14, 0x05, 0x78, 0x05, 0x40, 0x06, 0xA4, 0x06, 0x08, 0x07, 0xD5, 0xF6,
 ];
 
 // decode the byte stream
@@ -53,18 +53,16 @@ let mut rc_modes = RcModes::default();
 let mut rx_channels = RxChannels::default();
 
 // set a MAC for arming that is true if AUX1 ins in the range 1500-2000.
-let mac_arm = ModeActivationCondition::new(RcMode::ARM)
+let mac_arm = ModeActivationCondition::new(RcMode::Arm)
     .with_channel(RxChannel::Aux1)
     .with_range(RxChannelRange::from_pwm(1500, 2000));
 rc_modes.set_mac(0, mac_arm);
-// now all the MACs have been set, analyze them so they can be used.
-rc_modes.analyze_macs();
 
-// Set AUX1 to 1750 and confirm is arming is on.
+// Set AUX1 channel to 1750 and confirm is arming is on.
 rx_channels[RxChannel::Aux1] = 1750;
 assert!(mac_arm.is_active(&rx_channels));
 
-// Set AUX1 to 1250 and confirm is arming is off.
+// Set AUX1 channel to 1250 and confirm is arming is off.
 rx_channels[RxChannel::Aux1] = 1250;
 assert!(!mac_arm.is_active(&rx_channels));
 ```

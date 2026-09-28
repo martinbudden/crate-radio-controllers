@@ -11,6 +11,7 @@ use {
 /// AETR (ailerons, elevators, throttle, rudder) ordering.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub enum RxChannel {
     #[default]
     Roll = 0,
@@ -33,6 +34,37 @@ pub enum RxChannel {
     Aux14 = 17,
     Aux15 = 18,
     Aux16 = 19,
+}
+
+impl_try_from_u8!(RxChannel);
+
+impl RxChannel {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Roll,
+            1 => Self::Pitch,
+            2 => Self::Throttle,
+            3 => Self::Yaw,
+            4 => Self::Aux1,
+            5 => Self::Aux2,
+            6 => Self::Aux3,
+            7 => Self::Aux4,
+            8 => Self::Aux5,
+            9 => Self::Aux6,
+            10 => Self::Aux7,
+            11 => Self::Aux8,
+            12 => Self::Aux9,
+            13 => Self::Aux10,
+            14 => Self::Aux11,
+            15 => Self::Aux12,
+            16 => Self::Aux13,
+            17 => Self::Aux14,
+            18 => Self::Aux15,
+            19 => Self::Aux16,
+            _ => Self::default(),
+        }
+    }
 }
 
 impl RxChannel {

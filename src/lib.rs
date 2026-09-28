@@ -41,7 +41,7 @@ pub use rc_adjustments::{
     RcAdjustmentConfig, RcAdjustmentData, RcAdjustmentMode, RcAdjustmentRange, RcContinuosAdjustmentState,
     RcTimedAdjustmentState,
 };
-pub use rc_mode::RcMode;
+pub use rc_mode::{RcMode, RcModeDescriptor};
 pub use rc_modes::{ModeActivationCondition, RcModes};
 
 pub use rx_channel::{RxChannel, RxChannelRange, RxChannels};
