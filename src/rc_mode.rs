@@ -191,6 +191,33 @@ impl RcMode {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum RcModeLogic {
+    //const LOGIC_OR: u8 = 0;
+    //const LOGIC_AND: u8 = 1;
+    #[default]
+    Or = 0,
+    And = 1,
+}
+#[cfg(feature = "storage")]
+impl PostcardValue<'_> for RcModeLogic {}
+
+impl_try_from_u8!(RcModeLogic);
+
+impl RcModeLogic {
+    #[must_use]
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => Self::Or,
+
+            // Flight mode flags
+            1 => Self::And,
+            _ => Self::default(),
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RcModeDescriptor {
@@ -292,9 +319,15 @@ mod tests {
 
     #[test]
     fn normal_types() {
+        is_full::<RcMode>();
+        is_full::<RcModeLogic>();
         #[cfg(feature = "serde")]
         is_serde::<RcMode>();
         #[cfg(feature = "storage")]
         is_storage::<RcMode>();
+        #[cfg(feature = "serde")]
+        is_serde::<RcModeLogic>();
+        #[cfg(feature = "storage")]
+        is_storage::<RcModeLogic>();
     }
 }

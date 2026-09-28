@@ -1,4 +1,4 @@
-use super::{RcMode, RxChannel, RxChannelRange, RxChannels};
+use super::{RcMode, RcModeLogic, RxChannel, RxChannelRange, RxChannels};
 
 use simple_bitset::BitSet64;
 
@@ -15,10 +15,10 @@ use {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 pub struct ModeActivationCondition {
-    pub range: RxChannelRange,
     pub mode_id: RcMode,
+    pub mode_logic: RcModeLogic,
     pub channel: RxChannel,
-    pub mode_logic: u8,
+    pub range: RxChannelRange,
     pub linked_to: u8,
 }
 
@@ -35,9 +35,15 @@ impl ModeActivationCondition {
     /// Constructor.
     #[must_use]
     pub const fn new(mode_id: RcMode) -> Self {
-        Self { range: RxChannelRange::new(), mode_id, channel: RxChannel::Aux1, mode_logic: 0, linked_to: 0 }
+        Self {
+            mode_id,
+            mode_logic: RcModeLogic::Or,
+            channel: RxChannel::Aux1,
+            range: RxChannelRange::new(),
+            linked_to: 0,
+        }
     }
-    /// Set the aux channel index of a newly constructed MAC.
+    /// Set the channel of a newly constructed MAC.
     #[must_use]
     pub const fn with_channel(mut self, channel: RxChannel) -> Self {
         self.channel = channel;
@@ -57,7 +63,7 @@ impl ModeActivationCondition {
     }
     /// Set the mode logic of a newly constructed MAC.
     #[must_use]
-    pub const fn with_mode_logic(mut self, mode_logic: u8) -> Self {
+    pub const fn with_mode_logic(mut self, mode_logic: RcModeLogic) -> Self {
         self.mode_logic = mode_logic;
         self
     }
@@ -66,11 +72,6 @@ impl ModeActivationCondition {
     pub const fn with_linked_to(mut self, linked_to: u8) -> Self {
         self.linked_to = linked_to;
         self
-    }
-    /// Constructor.
-    #[must_use]
-    pub const fn from_range_mode_channel(range: RxChannelRange, mode_id: RcMode, channel: RxChannel) -> Self {
-        Self { range, mode_id, channel, mode_logic: 0, linked_to: 0 }
     }
 }
 
@@ -213,9 +214,6 @@ impl RcModes {
 }
 
 impl RcModes {
-    //const LOGIC_OR: u8 = 0;
-    const LOGIC_AND: u8 = 1;
-
     #[must_use]
     pub fn mac(&self, index: usize) -> Option<ModeActivationCondition> {
         if index < Self::MAX_MODE_ACTIVATION_CONDITION_COUNT { self.macs[index] } else { None }
@@ -271,7 +269,7 @@ impl RcModes {
     ) {
         let mac_mode_id = mac.mode_id as u8;
         if and_bitset.test(mac_mode_id) || !new_bitset.test(mac_mode_id) {
-            if mac.mode_logic == Self::LOGIC_AND {
+            if mac.mode_logic == RcModeLogic::And {
                 // AND mode_activation_condition
                 and_bitset.set(mac_mode_id);
                 if !range_is_active {
@@ -410,17 +408,13 @@ mod tests {
     fn mac() {
         let mut rc_modes = RcModes::default();
 
-        let mac_arm = ModeActivationCondition::from_range_mode_channel(
-            RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH),
-            RcMode::Arm,
-            RxChannel::Aux1,
-        );
+        let mac_arm = ModeActivationCondition::new(RcMode::Arm)
+            .with_channel(RxChannel::Aux1)
+            .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
         rc_modes.set_mac(0, mac_arm);
-        let mac_angle = ModeActivationCondition::from_range_mode_channel(
-            RxChannelRange::from_pwm(1000, 1250),
-            RcMode::Angle,
-            RxChannel::Aux2,
-        );
+        let mac_angle = ModeActivationCondition::new(RcMode::Angle)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(1000, 1250));
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
@@ -445,11 +439,9 @@ mod tests {
     fn mac_armed() {
         let mut rc_modes = RcModes::with_mac_arm();
 
-        let mac_angle = ModeActivationCondition::from_range_mode_channel(
-            RxChannelRange::from_pwm(1000, 1250),
-            RcMode::Angle,
-            RxChannel::Aux2,
-        );
+        let mac_angle = ModeActivationCondition::new(RcMode::Angle)
+            .with_channel(RxChannel::Aux2)
+            .with_range(RxChannelRange::from_pwm(1000, 1250));
         rc_modes.set_mac(1, mac_angle);
         rc_modes.analyze_macs();
 
