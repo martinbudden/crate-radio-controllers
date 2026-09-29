@@ -55,7 +55,7 @@ impl RcModes {
         let mac = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         self
     }
@@ -72,32 +72,32 @@ impl RcModes {
         let mac = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::Horizon)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID_LOW, RxChannel::MID_HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID_HIGH, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::BeeperOn)
             .with_channel(RxChannel::Aux3)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::CrashFlip)
             .with_channel(RxChannel::Aux4)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         let mac = ModeActivationCondition::new(RcMode::GpsRescue)
             .with_channel(RxChannel::Aux5)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        self.push_mac(mac);
+        _ = self.push_mac(mac);
 
         self
     }
@@ -114,8 +114,13 @@ impl RcModes {
             self.macs[index] = Some(mac);
         }
     }
-    pub fn push_mac(&mut self, mac: ModeActivationCondition) {
-        if let Ok(index) = self.macs.push(mac) {
+
+    /// Appends an item to the first available `None` slot.
+    /// # Errors
+    /// Returns `Ok(usize)` with the slot index on success, or `Err(ModeActivationCondition)` if full.
+    pub fn push_mac(&mut self, mac: ModeActivationCondition) -> Result<u8, ModeActivationCondition> {
+        let result = self.macs.push(mac);
+        if let Ok(index) = result {
             if mac.linked_to != 0 {
                 self.linked_macs[self.linked_mac_count] = index;
                 self.linked_mac_count += 1;
@@ -123,6 +128,9 @@ impl RcModes {
                 self.active_macs[self.active_mac_count] = index;
                 self.active_mac_count += 1;
             }
+            Ok(index)
+        } else {
+            result
         }
     }
 
@@ -284,17 +292,17 @@ mod tests {
         let mac_arm = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(1500, 2000));
-        rc_modes.push_mac(mac_arm);
+        _ = rc_modes.push_mac(mac_arm);
 
         let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1250, 1750));
-        rc_modes.push_mac(mac_horizon);
+        _ = rc_modes.push_mac(mac_horizon);
 
         let mac_angle = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1750, 2000));
-        rc_modes.push_mac(mac_angle);
+        _ = rc_modes.push_mac(mac_angle);
 
         let mut rx_channels = RxChannels::default();
 
@@ -315,12 +323,11 @@ mod tests {
         let mac_arm = ModeActivationCondition::new(RcMode::Arm)
             .with_channel(RxChannel::Aux1)
             .with_range(RxChannelRange::from_pwm(RxChannel::MID, RxChannel::HIGH));
-        rc_modes.push_mac(mac_arm);
+        _ = rc_modes.push_mac(mac_arm);
         let mac_angle = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1000, 1250));
-        rc_modes.push_mac(mac_angle);
-        rc_modes.analyze_macs();
+        _ = rc_modes.push_mac(mac_angle);
 
         let mut rx_channels = RxChannels::default();
         rx_channels[RxChannel::Aux1] = RxChannel::MID_HIGH;
@@ -346,8 +353,7 @@ mod tests {
         let mac_angle = ModeActivationCondition::new(RcMode::Angle)
             .with_channel(RxChannel::Aux2)
             .with_range(RxChannelRange::from_pwm(1000, 1250));
-        rc_modes.push_mac(mac_angle);
-        rc_modes.analyze_macs();
+        _ = rc_modes.push_mac(mac_angle);
 
         let mut rx_channels = RxChannels::default();
         rx_channels[RxChannel::Aux1] = RxChannel::MID_HIGH;

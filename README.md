@@ -1,7 +1,5 @@
 # radio-controllers Rust Crate<br>![License: MIT](https://img.shields.io/badge/license-MIT-green) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
 
-## Receivers
-
 Implements decoders for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
 
 `radio-controllers` also implements Betaflight compatible Mode Activation Conditions (MACs),
@@ -60,17 +58,17 @@ let mut rc_modes = RcModes::default();
 let mac_arm = ModeActivationCondition::new(RcMode::Arm)
     .with_channel(RxChannel::Aux1)
     .with_range(RxChannelRange::from_pwm(1500, 2000));
-rc_modes.push_mac(mac_arm);
+_ = rc_modes.push_mac(mac_arm);
 
 let mac_horizon = ModeActivationCondition::new(RcMode::Horizon)
     .with_channel(RxChannel::Aux2)
     .with_range(RxChannelRange::from_pwm(1250, 1750));
-rc_modes.push_mac(mac_horizon);
+_ = rc_modes.push_mac(mac_horizon);
 
 let mac_angle = ModeActivationCondition::new(RcMode::Angle)
     .with_channel(RxChannel::Aux2)
     .with_range(RxChannelRange::from_pwm(1750, 2000));
-rc_modes.push_mac(mac_angle);
+_ = rc_modes.push_mac(mac_angle);
 
 let mut rx_channels = RxChannels::default();
 
