@@ -352,6 +352,7 @@ mod tests {
         // and take action depending on the RC modes.
 
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }

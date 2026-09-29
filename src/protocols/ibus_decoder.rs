@@ -182,6 +182,7 @@ mod test_traits {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::panic)]
     use crate::RxLinkStatus;
 
     use super::*;
@@ -204,6 +205,7 @@ mod tests {
         // decode the byte stream
         let mut decoder = IbusDecoder::new();
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
@@ -238,12 +240,14 @@ mod tests {
 
         // Feed the stream into the state machine byte-by-byte
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
 
         // Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
+        #[allow(clippy::unwrap_used)]
         let (channels, link_status) = result.unwrap();
         assert_eq!(
             channels.channels()[..IbusDecoder::CHANNEL_COUNT],
@@ -263,6 +267,7 @@ mod tests {
         byte_stream[5] ^= 0xFF;
 
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
@@ -289,6 +294,7 @@ mod tests {
 
         let mut decoded_frame = None;
 
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in noisy_stream.iter() {
             // By dereferencing or cloning the value inside the if-let,
             // we release the borrow on `decoder` immediately.
@@ -298,13 +304,14 @@ mod tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
+        #[allow(clippy::unwrap_used)]
         let (channels, link_status) = decoded_frame.unwrap();
         assert_eq!(
             channels.channels()[..IbusDecoder::CHANNEL_COUNT],
             [1500; IbusDecoder::CHANNEL_COUNT],
             "Recovered packet contained bad channel data"
         );
-        assert_eq!(link_status, RxLinkStatus::Ok)
+        assert_eq!(link_status, RxLinkStatus::Ok);
     }
 
     #[test]
@@ -318,12 +325,19 @@ mod tests {
         let byte_stream = IbusDecoder::create_ibus_frame(failsafe_channels);
 
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in byte_stream.iter() {
             result = decoder.on_byte_received(byte);
         }
 
         assert!(result.is_some());
-        let (_channels, link_status) = result.unwrap();
-        assert!(link_status == RxLinkStatus::Failsafe, "Decoder failed to identify internal receiver link failure!");
+        if let Some((_channels, link_status)) = result {
+            assert!(
+                link_status == RxLinkStatus::Failsafe,
+                "Decoder failed to identify internal receiver link failure!"
+            );
+        } else {
+            panic!("decode failed");
+        }
     }
 }

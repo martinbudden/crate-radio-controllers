@@ -50,8 +50,5 @@ simple-bitset = { version = "0.1.7", default-features = false }
 [workspace]
 members = [
     ".",
-    # "examples",
-]
-exclude = [
     "xtask",
 ]

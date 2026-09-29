@@ -159,6 +159,9 @@ mod test_traits {
 
 #[cfg(test)]
 mod crsf_tests {
+    #![allow(clippy::panic)]
+    #![allow(clippy::unwrap_used)]
+
     use super::*; // Assumes CrsfDecoder, CrsfFrame, and CRSF_PAYLOAD_LEN are in scope
 
     /// Standard CRSF CRC8 implementation (DVB-S2 variant, polynomial 0xD5)
@@ -191,9 +194,10 @@ mod crsf_tests {
         let mut bits_in_bucket: u32 = 0;
         let mut byte_offset = 3;
 
+        #[allow(clippy::explicit_iter_loop)]
         for &channel_val in input_channels.iter() {
             let clean_val = channel_val & 0x07FF; // Enforce 11-bit boundary constraint
-            bit_bucket |= (clean_val as u32) << bits_in_bucket;
+            bit_bucket |= u32::from(clean_val) << bits_in_bucket;
             bits_in_bucket += 11;
 
             while bits_in_bucket >= 8 {
@@ -231,6 +235,7 @@ mod crsf_tests {
 
         // Feed the stream into the state machine byte-by-byte
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in crsf_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
                 result = Some(frame); // Copy the reference data out safely for evaluation
@@ -267,6 +272,7 @@ mod crsf_tests {
         stream[last_idx] ^= 0x5A;
 
         let mut result = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
                 result = Some(frame);
@@ -289,6 +295,7 @@ mod crsf_tests {
         noisy_stream[6..].copy_from_slice(&valid_packet);
 
         let mut decoded_frame = None;
+        #[allow(clippy::explicit_iter_loop)]
         for &byte in noisy_stream.iter() {
             if let Some(frame) = decoder.on_byte_received(byte) {
                 decoded_frame = Some(frame);
