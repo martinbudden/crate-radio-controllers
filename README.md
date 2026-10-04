@@ -1,10 +1,12 @@
-# radio-controllers Rust Crate<br>![License: MIT](https://img.shields.io/badge/license-MIT-green) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
+# `radio-controllers` Rust Crate<br>[![Crates.io](https://img.shields.io/crates/v/radio-controllers.svg)](https://crates.io/crates/radio-controllers) [![Documentation](https://docs.rs/radio-controllers/badge.svg)](https://docs.rs/radio-controllers) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
 
 Implements decoders for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
 
 `radio-controllers` also implements Betaflight compatible Mode Activation Conditions (MACs),
 whereby a mode can be activated when a channel is in a given range. It also has logic
 to activate a mode when a combination of channels has a combination of values.
+
+This crate is `no_std`, `no alloc`, and the Minimum Supported Rust Version (MSRV) is `Rust 1.89`.
 
 ## Examples
 

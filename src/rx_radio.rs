@@ -86,9 +86,19 @@ mod test_traits {
     use super::*;
 
     fn is_full_no_default<T: Sized + Send + Sync + Unpin + Copy + Clone + PartialEq>() {}
+    fn is_full<T: Sized + Send + Sync + Unpin + Copy + Clone + Default + PartialEq>() {}
+    #[cfg(feature = "serde")]
+    fn is_serde<T: Serialize + MaxSize + for<'a> Deserialize<'a>>() {}
+    #[cfg(feature = "storage")]
+    fn is_storage<T: for<'a> PostcardValue<'a>>() {}
 
     #[test]
     fn normal_types() {
         is_full_no_default::<Radio>();
+        is_full::<RadioType>();
+        #[cfg(feature = "serde")]
+        is_serde::<RadioType>();
+        #[cfg(feature = "storage")]
+        is_storage::<RadioType>();
     }
 }

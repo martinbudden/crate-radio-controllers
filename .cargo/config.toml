@@ -7,7 +7,7 @@ test-storage = "test --features storage"
 check-none = [ "check", "--no-default-features"]
 check-8 = [ "check", "--no-default-features", "--features", "eight_motors"]
 check-serde = [ "check", "--no-default-features", "--features", "serde"]
-check-storage = [ "check", "--no-default-features", "--features", "storage"]
+check-storage = [ "check", "--no-default-features", "--features", "serde", "storage"]
 
 # Continuous Integration
 ci = "run --package xtask --bin xtask"

@@ -194,18 +194,18 @@ impl RcMode {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, MaxSize))]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum RcModeLogic {
-    //const LOGIC_OR: u8 = 0;
-    //const LOGIC_AND: u8 = 1;
     #[default]
     Or = 0,
     And = 1,
 }
+
 #[cfg(feature = "storage")]
 impl PostcardValue<'_> for RcModeLogic {}
 
 impl_try_from_u8!(RcModeLogic);
 
 impl RcModeLogic {
+    /// Forgiving conversion from `u8` to `RcModeLogic`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {
