@@ -27,6 +27,7 @@ impl PostcardValue<'_> for RadioType {}
 impl_try_from_u8!(RadioType);
 
 impl RadioType {
+    /// Forgiving conversion from u8 to `RadioType`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {

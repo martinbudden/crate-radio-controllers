@@ -71,6 +71,7 @@ impl PostcardValue<'_> for ThrottleLimitType {}
 impl_try_from_u8!(ThrottleLimitType);
 
 impl ThrottleLimitType {
+    /// Forgiving conversion from u8 to `ThrottleLimitType`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {
@@ -101,6 +102,7 @@ impl_try_from_u8!(RatesType);
 
 #[allow(unused)]
 impl RatesType {
+    /// Forgiving conversion from u8 to `RatesType`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {

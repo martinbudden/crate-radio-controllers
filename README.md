@@ -1,10 +1,19 @@
 # `radio-controllers` Rust Crate<br>[![Crates.io](https://img.shields.io/crates/v/radio-controllers.svg)](https://crates.io/crates/radio-controllers) [![Documentation](https://docs.rs/radio-controllers/badge.svg)](https://docs.rs/radio-controllers) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
 
-Implements decoders for SBUS, IBUS, and Crossfire/ExpressLRS receivers.
+`radio-controllers` implements:
 
-`radio-controllers` also implements Betaflight compatible Mode Activation Conditions (MACs),
-whereby a mode can be activated when a channel is in a given range. It also has logic
-to activate a mode when a combination of channels has a combination of values.
+1. decoders for **SBUS**, **IBUS**, and **Crossfire**/**`ExpressLRS`** receivers.
+2. Betaflight compatible Mode Activation Conditions (MACs).
+3. Betaflight compatible Rates.
+
+MACs allow a mode to be activated when a channel is in a given range.
+For example the `RcMode::Arm` could be activated when the `Aux1` channel is in the range 1500-2100.
+They also have logic to activate a mode when a combination of channels has a combination of values.
+
+Rates allow non-linear mapping of a control stick value to a channel value.
+They are used to enable more precise control of an RC vehicle when the sticks are near their center positions.
+They are also used to adjust the overall "feel" of the sticks, eg tailoring an aerial  vehicle for smooth flying,
+racing, or acrobatics.
 
 This crate is `no_std`, `no alloc`, and the Minimum Supported Rust Version (MSRV) is `Rust 1.89`.
 

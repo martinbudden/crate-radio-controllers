@@ -9,7 +9,7 @@ that is each release may contain incompatible API changes.
 
 Once the API has stabilized this project will adopt semantic versioning, the first release to do so will be `0.2.0`.
 
-## [0.1.11] - 2026-10-03
+## [0.1.8] - 2026-10-05
 
 ### Added
 
@@ -17,7 +17,7 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 - Added `RxFrameType`.
 - Added `RcModeLogic`
 - Added CRSF decoder.
-- Added IBus Decoder.
+- Added IBus decoder.
 - Added `ModeActivationConditions` pseudo-array.
 
 ### Changed
@@ -39,6 +39,7 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 - Rearranged directory structure.
 - Split `serde` feature into `serde` and `storage`.
 - Updated `crc`.
+- Updated to `sequential-storage` version `8.0.2`.
 
 ### Removed
 

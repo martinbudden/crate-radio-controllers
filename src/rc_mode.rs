@@ -130,6 +130,7 @@ impl PostcardValue<'_> for RcMode {}
 impl_try_from_u8!(RcMode);
 
 impl RcMode {
+    /// Forgiving conversion from u8 to `RcMode`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {

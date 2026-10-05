@@ -56,7 +56,7 @@ pub enum RxFrameType {
 }
 
 impl RxFrameType {
-    /// Forgiving conversion, converts invalid values to default.
+    /// Forgiving conversion from u8 to `RxFrameType`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {
@@ -98,7 +98,7 @@ pub enum RxLinkStatus {
 }
 
 impl RxLinkStatus {
-    /// Forgiving conversion, converts invalid values to default.
+    /// Forgiving conversion from u8 to `RxLinkStatus`, converts invalid values to default.
     #[must_use]
     pub fn from_u8(value: u8) -> Self {
         match value {
