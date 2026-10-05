@@ -129,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "radio-controllers"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "postcard",
  "rustc_version",
