@@ -73,7 +73,7 @@ embassy-stm32 = { version = "0.6.0", default-features = false, optional = true }
 #embedded-hal-bus = { version = "0.3.0", features = ["async"] }
 esp-hal = { version = "1.2.2", default-features = false, optional = true }
 cortex-m = { version = "0.7.9", default-features = false, optional = true }
-cortex-m-rt = { version = "0.7.6" , default-features = false, optional = true }
+cortex-m-rt = { version = "0.7.7" , default-features = false, optional = true }
 
 fixed = "1.31.0"
 defmt = { version = "1.0.1" }

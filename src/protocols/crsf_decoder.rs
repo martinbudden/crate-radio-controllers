@@ -160,7 +160,6 @@ mod test_traits {
 #[cfg(test)]
 mod crsf_tests {
     #![allow(clippy::panic)]
-    #![allow(clippy::unwrap_used)]
 
     use super::*; // Assumes CrsfDecoder, CrsfFrame, and CRSF_PAYLOAD_LEN are in scope
 
@@ -244,19 +243,19 @@ mod crsf_tests {
 
         // Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
-        let output_frame = result.unwrap();
-
-        match output_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status } => {
-                assert_eq!(
-                    channels.channels(),
-                    expected_channels,
-                    "Decoded values do not match original 11-bit input boundaries!"
-                );
-                assert_eq!(link_status, RxLinkStatus::Ok);
-            }
-            _ => {
-                panic!("decoded to wrong frame type")
+        if let Some(output_frame) = result {
+            match output_frame {
+                RxFrame::ChannelsLinkStatus { channels, link_status } => {
+                    assert_eq!(
+                        channels.channels(),
+                        expected_channels,
+                        "Decoded values do not match original 11-bit input boundaries!"
+                    );
+                    assert_eq!(link_status, RxLinkStatus::Ok);
+                }
+                _ => {
+                    panic!("decoded to wrong frame type")
+                }
             }
         }
     }
@@ -303,14 +302,15 @@ mod crsf_tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to re-sync and recover after stream noise!");
-        let rx_frame = decoded_frame.unwrap();
-        match rx_frame {
-            RxFrame::ChannelsLinkStatus { channels, link_status } => {
-                assert_eq!(channels.channels(), [1500; 16]);
-                assert_eq!(link_status, RxLinkStatus::Ok);
-            }
-            _ => {
-                panic!("decoded to wrong frame type")
+        if let Some(rx_frame) = decoded_frame {
+            match rx_frame {
+                RxFrame::ChannelsLinkStatus { channels, link_status } => {
+                    assert_eq!(channels.channels(), [1500; 16]);
+                    assert_eq!(link_status, RxLinkStatus::Ok);
+                }
+                _ => {
+                    panic!("decoded to wrong frame type")
+                }
             }
         }
     }

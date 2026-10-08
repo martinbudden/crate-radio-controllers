@@ -247,14 +247,14 @@ mod tests {
 
         // Assert the state machine accurately matched the complete packet
         assert!(result.is_some(), "Decoder failed to yield channels on final frame byte!");
-        #[allow(clippy::unwrap_used)]
-        let (channels, link_status) = result.unwrap();
-        assert_eq!(
-            channels.channels()[..IbusDecoder::CHANNEL_COUNT],
-            input_channels,
-            "Decoded values do not match original inputs"
-        );
-        assert!(link_status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
+        if let Some((channels, link_status)) = result {
+            assert_eq!(
+                channels.channels()[..IbusDecoder::CHANNEL_COUNT],
+                input_channels,
+                "Decoded values do not match original inputs"
+            );
+            assert!(link_status == RxLinkStatus::Ok, "Decoder incorrectly flagged a healthy signal as a failsafe!");
+        }
     }
 
     #[test]
@@ -304,14 +304,14 @@ mod tests {
         }
 
         assert!(decoded_frame.is_some(), "Decoder failed to sync and recover after receiving noise!");
-        #[allow(clippy::unwrap_used)]
-        let (channels, link_status) = decoded_frame.unwrap();
-        assert_eq!(
-            channels.channels()[..IbusDecoder::CHANNEL_COUNT],
-            [1500; IbusDecoder::CHANNEL_COUNT],
-            "Recovered packet contained bad channel data"
-        );
-        assert_eq!(link_status, RxLinkStatus::Ok);
+        if let Some((channels, link_status)) = decoded_frame {
+            assert_eq!(
+                channels.channels()[..IbusDecoder::CHANNEL_COUNT],
+                [1500; IbusDecoder::CHANNEL_COUNT],
+                "Recovered packet contained bad channel data"
+            );
+            assert_eq!(link_status, RxLinkStatus::Ok);
+        }
     }
 
     #[test]
