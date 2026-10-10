@@ -182,7 +182,6 @@ mod test_traits {
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::panic)]
     use crate::RxLinkStatus;
 
     use super::*;
@@ -211,11 +210,10 @@ mod tests {
         }
 
         // deconstruct result and check it is correct
+        assert!(result.is_some());
         if let Some((channels, link_status)) = result {
             assert_eq!(channels, expected_channels);
             assert_eq!(link_status, RxLinkStatus::Ok);
-        } else {
-            panic!("decode failed");
         }
     }
 
@@ -336,8 +334,6 @@ mod tests {
                 link_status == RxLinkStatus::Failsafe,
                 "Decoder failed to identify internal receiver link failure!"
             );
-        } else {
-            panic!("decode failed");
         }
     }
 }
