@@ -15,7 +15,7 @@ They are used to enable more precise control of an RC vehicle when the sticks ar
 They are also used to adjust the overall "feel" of the sticks, eg tailoring an aerial  vehicle for smooth flying,
 racing, or acrobatics.
 
-This crate is `no_std`, `no alloc`, and the Minimum Supported Rust Version (MSRV) is `Rust 1.89`.
+This crate is `no_std`, `no alloc`, `no panic`, `no unwrap`, `no expect`, and the Minimum Supported Rust Version (MSRV) is `Rust 1.89`.
 
 ## Examples
 

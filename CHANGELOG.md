@@ -9,12 +9,13 @@ that is each release may contain incompatible API changes.
 
 Once the API has stabilized this project will adopt semantic versioning, the first release to do so will be `0.2.0`.
 
-## [0.1.9] - 2026-10-xx
+## [0.1.9] - 2026-10-23
 
 ### Changed
 
 - Changed `.markdownlint.json` to allow more inline HTML.
 - Improved tests.
+- Updated to `simple-bitset` version `0.1.9`.
 
 ### Removed
 
@@ -51,6 +52,7 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 - Split `serde` feature into `serde` and `storage`.
 - Updated `crc`.
 - Updated to `sequential-storage` version `8.0.2`.
+- Updated to `simple-bitset` version `0.1.8`.
 
 ### Removed
 
@@ -65,17 +67,17 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Added
 
-- support for `postcard` `MaxSize`.
-- more tests.
+- Support for `postcard` `MaxSize`.
+- More tests.
 
 ### Changed
 
 - General renaming from "Receiver" to "Radio" to avoid confusion with Embassy `Watch` `Receiver`s.
 - Updated to `sequential-storage` `0.8.1`.
-- use `enum`s rather than `u8`s for config values where appropriate.
-- improved conversion of `enum`s to `u8`s.
-- fixed CRC calculation.
-- no longer dependent on `libm`.
+- Use `enum`s rather than `u8`s for config values where appropriate.
+- Improved conversion of `enum`s to `u8`s.
+- Fixed CRC calculation.
+- No longer dependent on `libm`.
 
 ## [0.1.6] - 2026-08-04
 
@@ -86,11 +88,11 @@ Once the API has stabilized this project will adopt semantic versioning, the fir
 
 ### Changed
 
-- updated to `simple-bitset` version 0.1.5.
+- Updated to `simple-bitset` version `0.1.5`.
 - `new` functions to `const` where possible.
-- updated documentation.
-- subsumed `RcModesArray` into `RcMode`.
-- tidied `RcModes`.
+- Updated documentation.
+- Subsumed `RcModesArray` into `RcMode`.
+- Tidied `RcModes`.
 
 ### Removed
 
